@@ -24,9 +24,9 @@ int main()
     // list_append(list, (char*)'t');
     // //list_remove(list, 4);
 
-    for (int i = 0; i < 36; i++)
+    for (long i = 0; i < 36; i++)
     {
-        list_append(list, (int*)(i + 5));
+        list_append(list, (int*)i);
     }
 
     printf("%d, %d\n\n", list->count, list->size);
