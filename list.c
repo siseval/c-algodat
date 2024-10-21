@@ -11,9 +11,9 @@ struct list* list_create(size_t size, size_t data_size)
     }
 
     list_ptr->size = size;
-    list_ptr->count = 0;
     list_ptr->data_size = data_size;
-    list_ptr->data = malloc((size + 1) * data_size);
+    list_ptr->count = 0;
+    list_ptr->data = malloc((1 + size) * data_size);
 
     if (!list_ptr->data) 
     {
@@ -35,15 +35,15 @@ void list_append(struct list* list_ptr, void* data)
 {
     if (list_ptr->count >= list_ptr->size)
     {
-        void** data_buf = realloc(list_ptr->data, list_ptr->data_size + (list_ptr->size * 2) * list_ptr->data_size);
-        if (!data_buf)
+        void** tmp = realloc(list_ptr->data, list_ptr->data_size + (list_ptr->size * 2) * list_ptr->data_size);
+        if (!tmp)
         {
             fprintf(stderr, "list_append: realloc failed\n");
             free(list_ptr->data);
             free(list_ptr);
             return;
         }
-        list_ptr->data = data_buf;
+        list_ptr->data = tmp;
         list_ptr->size *= 2;
     }
     list_ptr->count++;
@@ -58,10 +58,12 @@ void* list_remove(struct list* list_ptr, int index)
         return NULL;
     }
     void* data_buf = list_ptr->data[index];
+
     for (int i = index + 2; i <= list_ptr->count; i++)
     {
         list_ptr->data[(i - 1)] = list_ptr->data[i];
     }
+
     list_ptr->data[1 + list_ptr->count] = NULL;
     list_ptr->count--;
 

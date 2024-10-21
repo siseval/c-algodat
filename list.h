@@ -3,16 +3,16 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include<stdio.h>
+#include <stdio.h>
 #include <stdint.h>
 
 #define list(T) list_create(32, sizeof(T*));
 
 struct list
 {
-    int size;
-    int count;
+    size_t size;
     size_t data_size;
+    int count;
     void **data;
 };
 
