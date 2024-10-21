@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include<stdio.h>
+#include <stdint.h>
 
 #define list(T) list_create(32, sizeof(T*));
 
