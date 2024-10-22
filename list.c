@@ -12,7 +12,6 @@ static bool list_realloc(struct list* list_ptr, size_t size)
         return false;
     }
     list_ptr->data = tmp;
-    list_ptr->size *= 2;
     return true;
 }
 
@@ -54,6 +53,7 @@ void list_append(struct list* list_ptr, void* data_ptr)
         {
             return; 
         }
+        list_ptr->size *= 2;
     }
     list_ptr->data[1 + list_ptr->count] = data_ptr;
     list_ptr->count++;
@@ -67,6 +67,7 @@ void list_insert(struct list* list_ptr, void* data_ptr, const int index)
         {
             return; 
         }
+        list_ptr->size *= 2;
     }
 
     for (int i = 1 + list_ptr->count; i > 1 + index; i--)

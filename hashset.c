@@ -7,6 +7,20 @@ static uint32_t hash_data(const void* data_ptr, const uint32_t mod)
     return hash;
 }
 
+bool hashset_realloc(struct hashset* hashset_ptr, size_t size)
+{
+    void** tmp = realloc(hashset_ptr->data, size);
+    if (!tmp)
+    {
+        fprintf(stderr, "hashset_append: realloc failed\n");
+        free(hashset_ptr->data);
+        free(hashset_ptr);
+        return false;
+    }
+    hashset_ptr->data = tmp;
+    return true;
+}
+
 void hashset_rehash(struct hashset* hashset_ptr)
 {
     void** data_buf = malloc(hashset_ptr->size * hashset_ptr->data_size); 
@@ -56,15 +70,10 @@ void hashset_put(struct hashset* hashset_ptr, void* data_ptr)
 {
     if (hashset_ptr->count >= hashset_ptr->size / 2)
     {
-        void** tmp = realloc(hashset_ptr->data, hashset_ptr->data_size + (hashset_ptr->size * 2) * hashset_ptr->data_size);
-        if (!tmp)
+        if (!hashset_realloc(hashset_ptr, hashset_ptr->data_size + (hashset_ptr->size * 2) * hashset_ptr->data_size))
         {
-            fprintf(stderr, "hashset_append: realloc failed\n");
-            free(hashset_ptr->data);
-            free(hashset_ptr);
             return;
         }
-        hashset_ptr->data = tmp;
         hashset_ptr->size *= 2;
         hashset_rehash(hashset_ptr);
     }
