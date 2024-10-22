@@ -17,7 +17,6 @@ struct hashset
     void **data;
 };
 
-
 struct hashset* hashset_create(size_t size, size_t data_size);
 void hashset_destroy(struct hashset* hashset_ptr);
 

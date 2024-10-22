@@ -139,4 +139,3 @@ bool hashset_contains(struct hashset* hashset_ptr, void* data_ptr)
     }
     return true;
 }
-
