@@ -1,7 +1,7 @@
 #include "hashset.h"
 
 
-uint32_t hash_data(const void* data_ptr, const uint32_t mod)
+static uint32_t hash_data(const void* data_ptr, const uint32_t mod)
 {
     uint32_t hash = (((uint32_t)(mod * 0.00003) * ((uint64_t)data_ptr)) % mod);
     return hash;

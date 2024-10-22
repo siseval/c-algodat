@@ -1,6 +1,21 @@
 #include "list.h"
 
 
+static bool list_realloc(struct list* list_ptr, size_t size)
+{
+    void** tmp = realloc(list_ptr->data, size); 
+    if (!tmp)
+    {
+        fprintf(stderr, "list_append: realloc failed\n");
+        free(list_ptr->data);
+        free(list_ptr);
+        return false;
+    }
+    list_ptr->data = tmp;
+    list_ptr->size *= 2;
+    return true;
+}
+
 struct list* list_create(const size_t size, const size_t data_size)
 {
     struct list* list_ptr = malloc(sizeof(struct list));
@@ -35,19 +50,31 @@ void list_append(struct list* list_ptr, void* data_ptr)
 {
     if (list_ptr->count >= list_ptr->size)
     {
-        void** tmp = realloc(list_ptr->data, list_ptr->data_size + (list_ptr->size * 2) * list_ptr->data_size);
-        if (!tmp)
+        if (!list_realloc(list_ptr, list_ptr->data_size + (list_ptr->size * 2) * list_ptr->data_size))
         {
-            fprintf(stderr, "list_append: realloc failed\n");
-            free(list_ptr->data);
-            free(list_ptr);
-            return;
+            return; 
         }
-        list_ptr->data = tmp;
-        list_ptr->size *= 2;
     }
+    list_ptr->data[1 + list_ptr->count] = data_ptr;
     list_ptr->count++;
-    list_ptr->data[list_ptr->count] = data_ptr;
+}
+
+void list_insert(struct list* list_ptr, void* data_ptr, const int index)
+{
+    if (list_ptr->count >= list_ptr->size)
+    {
+        if (!list_realloc(list_ptr, list_ptr->data_size + (list_ptr->size * 2) * list_ptr->data_size))
+        {
+            return; 
+        }
+    }
+
+    for (int i = 1 + list_ptr->count; i > 1 + index; i--)
+    {
+        list_ptr->data[i] = list_ptr->data[i - 1];    
+    }
+    list_ptr->data[1 + index] = data_ptr;
+    list_ptr->count++;
 }
 
 void* list_remove(struct list* list_ptr, const int index)

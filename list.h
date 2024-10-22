@@ -21,6 +21,8 @@ struct list* list_create(const size_t size, const size_t data_size);
 void list_destroy(struct list* list_ptr);
 
 void list_append(struct list* list_ptr, void* data_ptr);
+void list_insert(struct list* list_ptr, void* data_ptr, const int index);
+
 void* list_remove(struct list* list_ptr, const int index);
 void list_clear(struct list* list_ptr);
 
