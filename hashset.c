@@ -3,7 +3,7 @@
 
 uint32_t hash_data(void* data_ptr, uint32_t mod)
 {
-    uint32_t hash = (((uint32_t)(mod * 0.00003) * ((long)data_ptr)) % mod);
+    uint32_t hash = (((uint32_t)(mod * 0.00003) * ((uint64_t)data_ptr)) % mod);
     return hash;
 }
 
@@ -114,9 +114,9 @@ void hashset_clear(struct hashset* hashset_ptr)
 void* hashset_get(struct hashset* hashset_ptr, void* data_ptr)
 {
     uint32_t index = hash_data(data_ptr, hashset_ptr->size);
-    while (hash_data(hashset_ptr->data[1 + index], hashset_ptr->size) != hash_data(data_ptr, hashset_ptr->size))
+    while (hashset_ptr->data[1 + index] != data_ptr)
     {
-        if (hashset_ptr->data[index] == NULL)
+        if (hashset_ptr->data[1 + index] == NULL)
         {
             fprintf(stderr, "hashset_get: value not in hashset.\n");
             return NULL;
@@ -124,5 +124,19 @@ void* hashset_get(struct hashset* hashset_ptr, void* data_ptr)
         index = (index + 1) % hashset_ptr->size;
     }
     return hashset_ptr->data[1 + index];
+}
+
+bool hashset_contains(struct hashset* hashset_ptr, void* data_ptr)
+{
+    uint32_t index = hash_data(data_ptr, hashset_ptr->size);
+    while (hashset_ptr->data[1 + index] != data_ptr)
+    {
+        if (hashset_ptr->data[1 + index] == NULL)
+        {
+            return false;
+        }
+        index = (index + 1) % hashset_ptr->size;
+    }
+    return true;
 }
 
