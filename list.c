@@ -1,7 +1,7 @@
 #include "list.h"
 
 
-struct list* list_create(size_t size, size_t data_size)
+struct list* list_create(const size_t size, const size_t data_size)
 {
     struct list* list_ptr = malloc(sizeof(struct list));
     if (!list_ptr) 
@@ -50,7 +50,7 @@ void list_append(struct list* list_ptr, void* data_ptr)
     list_ptr->data[list_ptr->count] = data_ptr;
 }
 
-void* list_remove(struct list* list_ptr, int index)
+void* list_remove(struct list* list_ptr, const int index)
 {
     if (index >= list_ptr->count)
     {
@@ -75,7 +75,7 @@ void list_clear(struct list* list_ptr)
     list_ptr->count = 0;
 }
 
-void* list_get(struct list* list_ptr, int index)
+void* list_get(struct list* list_ptr, const int index)
 {
     if (index >= list_ptr->count)
     {
@@ -85,3 +85,14 @@ void* list_get(struct list* list_ptr, int index)
     return list_ptr->data[1 + index];
 }
 
+bool list_contains(struct list* list_ptr, const void* data_ptr)
+{
+    for (int i = 0; i < list_ptr->count; i++)
+    {
+        if (list_ptr->data[1 + i] == data_ptr)
+        {
+            return true;
+        }
+    }
+    return false;
+}

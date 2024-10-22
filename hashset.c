@@ -1,7 +1,7 @@
 #include "hashset.h"
 
 
-uint32_t hash_data(void* data_ptr, uint32_t mod)
+uint32_t hash_data(const void* data_ptr, const uint32_t mod)
 {
     uint32_t hash = (((uint32_t)(mod * 0.00003) * ((uint64_t)data_ptr)) % mod);
     return hash;
@@ -22,7 +22,7 @@ void hashset_rehash(struct hashset* hashset_ptr)
     free(data_buf);
 }
 
-struct hashset* hashset_create(size_t size, size_t data_size)
+struct hashset* hashset_create(const size_t size, const size_t data_size)
 {
     struct hashset* hashset_ptr = malloc(sizeof(struct hashset));
     if (!hashset_ptr) 
@@ -82,7 +82,7 @@ void hashset_put(struct hashset* hashset_ptr, void* data_ptr)
     hashset_ptr->count++;
 }
 
-void* hashset_remove(struct hashset* hashset_ptr, int index)
+void* hashset_remove(struct hashset* hashset_ptr, const int index)
 {
     if (index >= hashset_ptr->count)
     {
@@ -111,7 +111,7 @@ void hashset_clear(struct hashset* hashset_ptr)
     hashset_ptr->count = 0;
 }
 
-void* hashset_get(struct hashset* hashset_ptr, void* data_ptr)
+void* hashset_get(const struct hashset* hashset_ptr, const void* data_ptr)
 {
     uint32_t index = hash_data(data_ptr, hashset_ptr->size);
     while (hashset_ptr->data[1 + index] != data_ptr)
@@ -126,7 +126,7 @@ void* hashset_get(struct hashset* hashset_ptr, void* data_ptr)
     return hashset_ptr->data[1 + index];
 }
 
-bool hashset_contains(struct hashset* hashset_ptr, void* data_ptr)
+bool hashset_contains(const struct hashset* hashset_ptr, const void* data_ptr)
 {
     uint32_t index = hash_data(data_ptr, hashset_ptr->size);
     while (hashset_ptr->data[1 + index] != data_ptr)

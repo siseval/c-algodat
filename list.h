@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define list(T) list_create(32, sizeof(T*));
 
@@ -16,13 +17,14 @@ struct list
     void **data;
 };
 
-struct list* list_create(size_t size, size_t data_size);
+struct list* list_create(const size_t size, const size_t data_size);
 void list_destroy(struct list* list_ptr);
 
 void list_append(struct list* list_ptr, void* data_ptr);
-void* list_remove(struct list* list_ptr, int index);
+void* list_remove(struct list* list_ptr, const int index);
 void list_clear(struct list* list_ptr);
 
-void* list_get(struct list* list_ptr, int index);
+void* list_get(struct list* list_ptr, const int index);
+bool list_contains(struct list* list_ptr, const void* data_ptr);
 
 #endif
