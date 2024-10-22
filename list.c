@@ -31,7 +31,7 @@ void list_destroy(struct list* list_ptr)
     free(list_ptr);
 }
 
-void list_append(struct list* list_ptr, void* data)
+void list_append(struct list* list_ptr, void* data_ptr)
 {
     if (list_ptr->count >= list_ptr->size)
     {
@@ -47,7 +47,7 @@ void list_append(struct list* list_ptr, void* data)
         list_ptr->size *= 2;
     }
     list_ptr->count++;
-    list_ptr->data[list_ptr->count] = data;
+    list_ptr->data[list_ptr->count] = data_ptr;
 }
 
 void* list_remove(struct list* list_ptr, int index)
