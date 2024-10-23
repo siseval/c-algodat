@@ -1,10 +1,31 @@
 #include "hashset.h"
 
 
-static uint32_t hash_data(const void* data_ptr, const uint32_t mod)
+static uint32_t hash_integer(const void* data_ptr, const uint32_t mod)
 {
-    uint32_t hash = (((uint32_t)(mod * 0.00003) * ((uint64_t)data_ptr)) % mod);
-    return hash;
+    uint32_t hash = (((uint32_t)(mod * 0.00003) * ((uint64_t)data_ptr)));
+    return hash % mod;
+}
+
+static uint32_t hash_string(const char* data_ptr, const uint32_t mod)
+{
+    uint32_t hash = 7;
+    for (int i = 0; i < strlen(data_ptr); i++)
+    {
+        hash = 31 * hash + data_ptr[i];
+    }
+    return hash % mod;
+}
+
+static uint32_t hash_data(const void* data_ptr, const uint32_t mod, enum type data_type)
+{
+    switch (data_type)
+    {
+        case str_t:
+            return hash_string(data_ptr, mod);
+        default:
+            return hash_integer(data_ptr, mod);
+    }
 }
 
 bool hashset_realloc(struct hashset* hashset_ptr, size_t size)
@@ -12,7 +33,7 @@ bool hashset_realloc(struct hashset* hashset_ptr, size_t size)
     void** tmp = realloc(hashset_ptr->data, size);
     if (!tmp)
     {
-        fprintf(stderr, "hashset_append: realloc failed\n");
+        fprintf(stderr, "hashset_realloc: realloc failed\n");
         free(hashset_ptr->data);
         free(hashset_ptr);
         return false;
@@ -36,7 +57,7 @@ void hashset_rehash(struct hashset* hashset_ptr)
     free(data_buf);
 }
 
-struct hashset* hashset_create(const size_t size, const size_t data_size)
+struct hashset* hashset_create(const size_t size, const enum type data_type)
 {
     struct hashset* hashset_ptr = malloc(sizeof(struct hashset));
     if (!hashset_ptr) 
@@ -46,10 +67,11 @@ struct hashset* hashset_create(const size_t size, const size_t data_size)
     }
 
     hashset_ptr->size = size;
-    hashset_ptr->data_size = data_size;
+    hashset_ptr->data_size = sizeof(void*);
+    hashset_ptr->data_type = data_type;
     hashset_ptr->count = 0;
-    hashset_ptr->data = malloc((1 + size) * data_size);
 
+    hashset_ptr->data = malloc((1 + size) * hashset_ptr->data_size);
     if (!hashset_ptr->data) 
     {
         fprintf(stderr, "hashset_create: data malloc failed\n");
@@ -78,7 +100,8 @@ void hashset_put(struct hashset* hashset_ptr, void* data_ptr)
         hashset_rehash(hashset_ptr);
     }
 
-    uint32_t index = hash_data(data_ptr, hashset_ptr->size);
+    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->data_type);
+
     while (hashset_ptr->data[1 + index] != NULL)
     {
         if (hashset_ptr->data[1 + index] == data_ptr)
@@ -122,7 +145,7 @@ void hashset_clear(struct hashset* hashset_ptr)
 
 void* hashset_get(const struct hashset* hashset_ptr, const void* data_ptr)
 {
-    uint32_t index = hash_data(data_ptr, hashset_ptr->size);
+    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->data_type);
     while (hashset_ptr->data[1 + index] != data_ptr)
     {
         if (hashset_ptr->data[1 + index] == NULL)
@@ -137,7 +160,7 @@ void* hashset_get(const struct hashset* hashset_ptr, const void* data_ptr)
 
 bool hashset_contains(const struct hashset* hashset_ptr, const void* data_ptr)
 {
-    uint32_t index = hash_data(data_ptr, hashset_ptr->size);
+    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->data_type);
     while (hashset_ptr->data[1 + index] != data_ptr)
     {
         if (hashset_ptr->data[1 + index] == NULL)

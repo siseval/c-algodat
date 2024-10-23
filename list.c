@@ -6,7 +6,7 @@ static bool list_realloc(struct list* list_ptr, size_t size)
     void** tmp = realloc(list_ptr->data, size); 
     if (!tmp)
     {
-        fprintf(stderr, "list_append: realloc failed\n");
+        fprintf(stderr, "list_realloc: realloc failed\n");
         free(list_ptr->data);
         free(list_ptr);
         return false;
@@ -15,7 +15,7 @@ static bool list_realloc(struct list* list_ptr, size_t size)
     return true;
 }
 
-struct list* list_create(const size_t size, const size_t data_size)
+struct list* list_create(const size_t size, const enum type data_type)
 {
     struct list* list_ptr = malloc(sizeof(struct list));
     if (!list_ptr) 
@@ -25,9 +25,10 @@ struct list* list_create(const size_t size, const size_t data_size)
     }
 
     list_ptr->size = size;
-    list_ptr->data_size = data_size;
+    list_ptr->data_size = sizeof(void*);
+    list_ptr->data_type = data_type;
     list_ptr->count = 0;
-    list_ptr->data = malloc((1 + size) * data_size);
+    list_ptr->data = malloc((1 + size) * list_ptr->data_size);
 
     if (!list_ptr->data) 
     {
