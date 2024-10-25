@@ -17,15 +17,9 @@ static uint32_t hash_string(const char* data_ptr, const uint32_t mod)
     return hash % mod;
 }
 
-static uint32_t hash_data(const void* data_ptr, const uint32_t mod, enum type data_type)
+static uint32_t hash_data(const void* data_ptr, const uint32_t mod, bool string_hash)
 {
-    switch (data_type)
-    {
-        case str_t:
-            return hash_string(data_ptr, mod);
-        default:
-            return hash_integer(data_ptr, mod);
-    }
+    return string_hash ? hash_string(data_ptr, mod) : hash_integer(data_ptr, mod); 
 }
 
 bool hashset_realloc(struct hashset* hashset_ptr, size_t size)
@@ -57,7 +51,7 @@ void hashset_rehash(struct hashset* hashset_ptr)
     free(data_buf);
 }
 
-struct hashset* hashset_create(const size_t size, const enum type data_type)
+struct hashset* hashset_create(const size_t size, const bool string_hash)
 {
     struct hashset* hashset_ptr = malloc(sizeof(struct hashset));
     if (!hashset_ptr) 
@@ -68,7 +62,7 @@ struct hashset* hashset_create(const size_t size, const enum type data_type)
 
     hashset_ptr->size = size;
     hashset_ptr->data_size = sizeof(void*);
-    hashset_ptr->data_type = data_type;
+    hashset_ptr->string_hash = string_hash;
     hashset_ptr->count = 0;
 
     hashset_ptr->data = malloc((1 + size) * hashset_ptr->data_size);
@@ -100,7 +94,7 @@ void hashset_put(struct hashset* hashset_ptr, void* data_ptr)
         hashset_rehash(hashset_ptr);
     }
 
-    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->data_type);
+    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->string_hash);
 
     while (hashset_ptr->data[1 + index] != NULL)
     {
@@ -145,7 +139,7 @@ void hashset_clear(struct hashset* hashset_ptr)
 
 void* hashset_get(const struct hashset* hashset_ptr, const void* data_ptr)
 {
-    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->data_type);
+    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->string_hash);
     while (hashset_ptr->data[1 + index] != data_ptr)
     {
         if (hashset_ptr->data[1 + index] == NULL)
@@ -160,7 +154,7 @@ void* hashset_get(const struct hashset* hashset_ptr, const void* data_ptr)
 
 bool hashset_contains(const struct hashset* hashset_ptr, const void* data_ptr)
 {
-    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->data_type);
+    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->string_hash);
     while (hashset_ptr->data[1 + index] != data_ptr)
     {
         if (hashset_ptr->data[1 + index] == NULL)

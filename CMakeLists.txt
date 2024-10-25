@@ -5,5 +5,6 @@ add_executable(
         algo
         main.c
         list.c
+        hashmap.c
         hashset.c
     )

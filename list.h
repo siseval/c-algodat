@@ -6,20 +6,18 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "types.h"
 
-#define list(T) list_create(32, T)
+#define list(T) list_create(32)
 
 struct list
 {
     size_t size;
     size_t data_size;
-    enum type data_type;
     int count;
     void **data;
 };
 
-struct list* list_create(const size_t size, const enum type data_type);
+struct list* list_create(const size_t size);
 void list_destroy(struct list* list_ptr);
 
 void list_append(struct list* list_ptr, void* data_ptr);

@@ -1,25 +1,24 @@
-#ifndef HASHSET_H
-#define HASHSET_H
+#ifndef hashset_H
+#define hashset_H
 
-#include "types.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-#define hashset(T) hashset_create(32, T)
+#define hashset(T) hashset_create(32, !strcmp(#T, "str") || !strcmp(#T, "char*"))
 
 struct hashset
 {
     size_t size;
     size_t data_size;
-    enum type data_type;
+    bool string_hash;
     int count;
     void **data;
 };
 
-struct hashset* hashset_create(const size_t size, const enum type data_type);
+struct hashset* hashset_create(const size_t size, const bool string_type);
 void hashset_destroy(struct hashset* hashset_ptr);
 
 void hashset_put(struct hashset* hashset_ptr, void* data_ptr);
