@@ -17,7 +17,7 @@ static bool list_realloc(struct list* list_ptr, size_t size)
 
 struct list* list_create(const size_t size)
 {
-    struct list* list_ptr = malloc(sizeof(struct list));
+    struct list* list_ptr = calloc(1, sizeof(struct list));
     if (!list_ptr) 
     { 
         fprintf(stderr, "list_create: list malloc failed\n");
@@ -27,7 +27,7 @@ struct list* list_create(const size_t size)
     list_ptr->size = size;
     list_ptr->data_size = sizeof(void*);
     list_ptr->count = 0;
-    list_ptr->data = malloc((1 + size) * list_ptr->data_size);
+    list_ptr->data = calloc((1 + size), list_ptr->data_size);
 
     if (!list_ptr->data) 
     {

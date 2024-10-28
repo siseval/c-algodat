@@ -1,4 +1,5 @@
 #include "hashset.h"
+#include <stdint.h>
 
 
 static uint32_t hash_integer(const void* data_ptr, const uint32_t mod)
@@ -38,7 +39,7 @@ bool hashset_realloc(struct hashset* hashset_ptr, size_t size)
 
 void hashset_rehash(struct hashset* hashset_ptr)
 {
-    void** data_buf = malloc(hashset_ptr->size * hashset_ptr->data_size); 
+    void** data_buf = calloc(hashset_ptr->size, hashset_ptr->data_size); 
     memcpy(data_buf, hashset_ptr->data, hashset_ptr->size * hashset_ptr->data_size);
     hashset_clear(hashset_ptr);
     for (int i = 0; i < hashset_ptr->size; i++)
@@ -51,9 +52,27 @@ void hashset_rehash(struct hashset* hashset_ptr)
     free(data_buf);
 }
 
+void hashset_fill_hole(struct hashset* hashset_ptr, uint32_t index)
+{
+    uint32_t index_delta = 1;
+    while (hashset_ptr->data[index + index_delta % hashset_ptr->size] != NULL)
+    {
+        void* data_ptr = hashset_ptr->data[index + index_delta % hashset_ptr->size];
+        uint32_t new_index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->string_hash); 
+        if (!(0 < (new_index - index) % hashset_ptr->size && (new_index - index) % hashset_ptr->size <= index_delta))
+        {
+            hashset_ptr->data[index] = data_ptr;
+            hashset_ptr->data[index + index_delta % hashset_ptr->size] = NULL;
+            hashset_fill_hole(hashset_ptr, new_index);
+            return;
+        }
+        index_delta++;
+    }
+}
+
 struct hashset* hashset_create(const size_t size, const bool string_hash)
 {
-    struct hashset* hashset_ptr = malloc(sizeof(struct hashset));
+    struct hashset* hashset_ptr = calloc(1, sizeof(struct hashset));
     if (!hashset_ptr) 
     { 
         fprintf(stderr, "hashset_create: hashset malloc failed\n");
@@ -65,7 +84,7 @@ struct hashset* hashset_create(const size_t size, const bool string_hash)
     hashset_ptr->string_hash = string_hash;
     hashset_ptr->count = 0;
 
-    hashset_ptr->data = malloc((1 + size) * hashset_ptr->data_size);
+    hashset_ptr->data = calloc((1 + size), hashset_ptr->data_size);
     if (!hashset_ptr->data) 
     {
         fprintf(stderr, "hashset_create: data malloc failed\n");
@@ -108,23 +127,22 @@ void hashset_put(struct hashset* hashset_ptr, void* data_ptr)
     hashset_ptr->count++;
 }
 
-void* hashset_remove(struct hashset* hashset_ptr, const int index)
-{
-    if (index >= hashset_ptr->count)
+void* hashset_remove(struct hashset* hashset_ptr, const void* data_ptr)
+{  
+    uint32_t index = hash_data(data_ptr, hashset_ptr->size, hashset_ptr->string_hash);
+    while (hashset_ptr->data[1 + index] != data_ptr)
     {
-        fprintf(stderr, "hashset_remove: index out of bounds\n");
-        return NULL;
+        if (hashset_ptr->data[1 + index] == NULL)
+        {
+            fprintf(stderr, "hashset_remove: value not in hashset.\n");
+            return NULL;
+        }
+        index = (index + 1) % hashset_ptr->size;
     }
-    void* data_buf = hashset_ptr->data[index];
-
-    for (int i = index + 2; i <= hashset_ptr->count; i++)
-    {
-        hashset_ptr->data[(i - 1)] = hashset_ptr->data[i];
-    }
-
-    hashset_ptr->data[1 + hashset_ptr->count] = NULL;
+    void* data_buf = hashset_ptr->data[1 + index];
+    hashset_ptr->data[1 + index] = NULL;
     hashset_ptr->count--;
-
+    hashset_fill_hole(hashset_ptr, 1 + index);
     return data_buf;
 }
 

@@ -22,7 +22,7 @@ struct hashset* hashset_create(const size_t size, const bool string_type);
 void hashset_destroy(struct hashset* hashset_ptr);
 
 void hashset_put(struct hashset* hashset_ptr, void* data_ptr);
-void* hashset_remove(struct hashset* hashset_ptr, const int index);
+void* hashset_remove(struct hashset* hashset_ptr, const void* data_ptr);
 void hashset_clear(struct hashset* hashset_ptr);
 
 void* hashset_get(const struct hashset* hashset_ptr, const void* data_ptr);
