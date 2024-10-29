@@ -1,5 +1,4 @@
 #include "hashset.h"
-#include <stdint.h>
 
 
 static uint32_t hash_integer(const void* data_ptr, const uint32_t mod)
@@ -23,7 +22,7 @@ static uint32_t hash_data(const void* data_ptr, const uint32_t mod, bool string_
     return string_hash ? hash_string(data_ptr, mod) : hash_integer(data_ptr, mod); 
 }
 
-bool hashset_realloc(struct hashset* hashset_ptr, size_t size)
+static bool hashset_realloc(struct hashset* hashset_ptr, size_t size)
 {
     void** tmp = realloc(hashset_ptr->data, size);
     if (!tmp)
@@ -37,7 +36,7 @@ bool hashset_realloc(struct hashset* hashset_ptr, size_t size)
     return true;
 }
 
-void hashset_rehash(struct hashset* hashset_ptr)
+static void hashset_rehash(struct hashset* hashset_ptr)
 {
     void** data_buf = calloc(hashset_ptr->size, hashset_ptr->data_size); 
     memcpy(data_buf, hashset_ptr->data, hashset_ptr->size * hashset_ptr->data_size);
@@ -52,7 +51,7 @@ void hashset_rehash(struct hashset* hashset_ptr)
     free(data_buf);
 }
 
-void hashset_fill_hole(struct hashset* hashset_ptr, uint32_t index)
+static void hashset_fill_hole(struct hashset* hashset_ptr, uint32_t index)
 {
     uint32_t index_delta = 1;
     while (hashset_ptr->data[index + index_delta % hashset_ptr->size] != NULL)
