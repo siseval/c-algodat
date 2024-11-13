@@ -17,20 +17,20 @@ struct key_value
 
 struct hashmap
 {
-    size_t size;
-    size_t data_size;
+    uint64_t size;
+    uint64_t data_size;
     bool string_hash;
     int count;
     struct key_value** data;
 };
 
-struct hashmap* hashmap_create(const size_t size, const bool string_type); void hashmap_destroy(struct hashmap* hashmap_ptr);
+struct hashmap* hashmap_create(const uint64_t size, const bool string_type); void hashmap_destroy(struct hashmap* hashmap);
 
-void hashmap_put(struct hashmap* hashmap_ptr, void* key_ptr, void* value_ptr);
-void* hashmap_remove(struct hashmap* hashmap_ptr, const void* key_ptr);
-void hashmap_clear(struct hashmap* hashmap_ptr);
+void hashmap_put(struct hashmap* hashmap, void* key, void* value);
+void* hashmap_remove(struct hashmap* hashmap, const void* key);
+void hashmap_clear(struct hashmap* hashmap);
 
-void* hashmap_get(const struct hashmap* hashmap_ptr, const void* key_ptr);
-bool hashmap_has_key(const struct hashmap* hashmap_ptr, const void* key_ptr);
+void* hashmap_get(const struct hashmap* hashmap, const void* key);
+bool hashmap_has_key(const struct hashmap* hashmap, const void* key);
 
 #endif

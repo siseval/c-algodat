@@ -1,123 +1,128 @@
 #include "list.h"
 
 
-static bool list_realloc(struct list* list_ptr, size_t size)
+static bool list_realloc(struct list* list, uint64_t size)
 {
-    void** tmp = realloc(list_ptr->data, size); 
+    void** tmp = realloc(list->data, size); 
     if (!tmp)
     {
         fprintf(stderr, "list_realloc: realloc failed\n");
-        free(list_ptr->data);
-        free(list_ptr);
+        free(list->data);
+        free(list);
         return false;
     }
-    list_ptr->data = tmp;
+    list->data = tmp;
     return true;
 }
 
-struct list* list_create(const size_t size)
+struct list* list_create(const uint64_t size)
 {
-    struct list* list_ptr = calloc(1, sizeof(struct list));
-    if (!list_ptr) 
+    struct list* list = calloc(1, sizeof(struct list));
+    if (!list) 
     { 
         fprintf(stderr, "list_create: list malloc failed\n");
         return NULL; 
     }
 
-    list_ptr->size = size;
-    list_ptr->data_size = sizeof(void*);
-    list_ptr->count = 0;
-    list_ptr->data = calloc((1 + size), list_ptr->data_size);
+    list->size = size;
+    list->data_size = sizeof(void*);
+    list->count = 0;
+    list->data = calloc((1 + size), list->data_size);
 
-    if (!list_ptr->data) 
+    if (!list->data) 
     {
         fprintf(stderr, "list_create: data malloc failed\n");
-        free(list_ptr);
+        free(list);
         return NULL;
     }
 
-    return list_ptr;
+    return list;
 }
 
-void list_destroy(struct list* list_ptr)
+void list_destroy(struct list* list)
 {
-    free(list_ptr->data);
-    free(list_ptr);
+    free(list->data);
+    free(list);
 }
 
-void list_append(struct list* list_ptr, void* data_ptr)
+void list_append(struct list* list, void* data)
 {
-    if (list_ptr->count >= list_ptr->size)
+    if (list->count >= list->size)
     {
-        if (!list_realloc(list_ptr, list_ptr->data_size + (list_ptr->size * 2) * list_ptr->data_size))
+        if (!list_realloc(list, list->data_size + (list->size * 2) * list->data_size))
         {
             return; 
         }
-        list_ptr->size *= 2;
+        list->size *= 2;
     }
-    list_ptr->data[1 + list_ptr->count] = data_ptr;
-    list_ptr->count++;
+    list->data[1 + list->count] = data;
+    list->count++;
 }
 
-void list_insert(struct list* list_ptr, void* data_ptr, const int index)
+void list_insert(struct list* list, void* data, const uint64_t index)
 {
-    if (list_ptr->count >= list_ptr->size)
+    if (list->count >= list->size)
     {
-        if (!list_realloc(list_ptr, list_ptr->data_size + (list_ptr->size * 2) * list_ptr->data_size))
+        if (!list_realloc(list, list->data_size + (list->size * 2) * list->data_size))
         {
             return; 
         }
-        list_ptr->size *= 2;
+        list->size *= 2;
     }
 
-    for (int i = 1 + list_ptr->count; i > 1 + index; i--)
+    for (int i = 1 + list->count; i > 1 + index; i--)
     {
-        list_ptr->data[i] = list_ptr->data[i - 1];    
+        list->data[i] = list->data[i - 1];    
     }
-    list_ptr->data[1 + index] = data_ptr;
-    list_ptr->count++;
+    list->data[1 + index] = data;
+    list->count++;
 }
 
-void* list_remove(struct list* list_ptr, const int index)
+void list_replace(struct list* list, void* data, const uint64_t index)
 {
-    if (index >= list_ptr->count)
+    list->data[index] = list;
+}
+
+void* list_remove(struct list* list, const uint64_t index)
+{
+    if (index >= list->count)
     {
         fprintf(stderr, "list_remove: index out of bounds\n");
         return NULL;
     }
-    void* data_buf = list_ptr->data[index];
+    void* data_buf = list->data[index];
 
-    for (int i = index + 2; i <= list_ptr->count; i++)
+    for (int i = index + 2; i <= list->count; i++)
     {
-        list_ptr->data[(i - 1)] = list_ptr->data[i];
+        list->data[(i - 1)] = list->data[i];
     }
 
-    list_ptr->data[1 + list_ptr->count] = NULL;
-    list_ptr->count--;
+    list->data[1 + list->count] = NULL;
+    list->count--;
 
     return data_buf;
 }
 
-void list_clear(struct list* list_ptr)
+void list_clear(struct list* list)
 {
-    list_ptr->count = 0;
+    list->count = 0;
 }
 
-void* list_get(struct list* list_ptr, const int index)
+void* list_get(struct list* list, const uint64_t index)
 {
-    if (index >= list_ptr->count)
+    if (index >= list->count)
     {
         fprintf(stderr, "list_get: index out of bounds\n");
         return NULL;
     }
-    return list_ptr->data[1 + index];
+    return list->data[1 + index];
 }
 
-bool list_contains(struct list* list_ptr, const void* data_ptr)
+bool list_contains(struct list* list, const void* data)
 {
-    for (int i = 0; i < list_ptr->count; i++)
+    for (int i = 0; i < list->count; i++)
     {
-        if (list_ptr->data[1 + i] == data_ptr)
+        if (list->data[1 + i] == data)
         {
             return true;
         }

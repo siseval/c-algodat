@@ -11,21 +11,21 @@
 
 struct hashset
 {
-    size_t size;
-    size_t data_size;
+    uint64_t size;
+    uint64_t data_size;
     bool string_hash;
     int count;
     void **data;
 };
 
-struct hashset* hashset_create(const size_t size, const bool string_type);
-void hashset_destroy(struct hashset* hashset_ptr);
+struct hashset* hashset_create(const uint64_t size, const bool string_type);
+void hashset_destroy(struct hashset* hashset);
 
-void hashset_put(struct hashset* hashset_ptr, void* data_ptr);
-void* hashset_remove(struct hashset* hashset_ptr, const void* data_ptr);
-void hashset_clear(struct hashset* hashset_ptr);
+void hashset_put(struct hashset* hashset, void* data);
+void* hashset_remove(struct hashset* hashset, const void* data);
+void hashset_clear(struct hashset* hashset);
 
-void* hashset_get(const struct hashset* hashset_ptr, const void* data_ptr);
-bool hashset_contains(const struct hashset* hashset_ptr, const void* data_ptr);
+void* hashset_get(const struct hashset* hashset, const void* data);
+bool hashset_contains(const struct hashset* hashset, const void* data);
 
 #endif

@@ -1,203 +1,203 @@
 #include "hashmap.h"
 
 
-static uint32_t hash_integer(const void* data_ptr, const uint32_t mod)
+static uint32_t hash_integer(const void* data, const uint32_t mod)
 {
-    uint32_t hash = (((uint32_t)(mod * 0.00003) * ((uint64_t)data_ptr)));
+    uint32_t hash = (((uint32_t)(mod * 0.00003) * ((uint64_t)data)));
     return hash % mod;
 }
 
-static uint32_t hash_string(const char* data_ptr, const uint32_t mod)
+static uint32_t hash_string(const char* data, const uint32_t mod)
 {
     uint32_t hash = 7;
-    for (int i = 0; i < strlen(data_ptr); i++)
+    for (int i = 0; i < strlen(data); i++)
     {
-        hash = 31 * hash + data_ptr[i];
+        hash = 31 * hash + data[i];
     }
     return hash % mod;
 }
 
-static uint32_t hash_data(const void* data_ptr, const uint32_t mod, bool string_hash)
+static uint32_t hash_data(const void* data, const uint32_t mod, bool string_hash)
 {
-    return string_hash ? hash_string(data_ptr, mod) : hash_integer(data_ptr, mod); 
+    return string_hash ? hash_string(data, mod) : hash_integer(data, mod); 
 }
 
-static bool key_equals(const void* key1_ptr, const void* key2_ptr, bool string_hash)
+static bool key_equals(const void* key1, const void* key2, bool string_hash)
 {
     if (string_hash)
     {
-        return !strcmp((char*)key1_ptr, (char*)key2_ptr);
+        return !strcmp((char*)key1, (char*)key2);
     }
-    return key1_ptr == key2_ptr;
+    return key1 == key2;
 }
 
-static bool hashmap_realloc(struct hashmap* hashmap_ptr, size_t size)
+static bool hashmap_realloc(struct hashmap* hashmap, uint64_t size)
 {
-    struct key_value** tmp = realloc(hashmap_ptr->data, size);
+    struct key_value** tmp = realloc(hashmap->data, size);
     if (!tmp)
     {
         fprintf(stderr, "hashmap_realloc: realloc failed\n");
-        hashmap_destroy(hashmap_ptr);
+        hashmap_destroy(hashmap);
         return false;
     }
-    hashmap_ptr->data = tmp;
+    hashmap->data = tmp;
     return true;
 }
 
-static void hashmap_rehash(struct hashmap* hashmap_ptr)
+static void hashmap_rehash(struct hashmap* hashmap)
 {
-    struct key_value** data_buf = calloc(hashmap_ptr->size, hashmap_ptr->data_size); 
-    memcpy(data_buf, hashmap_ptr->data, hashmap_ptr->size * hashmap_ptr->data_size);
-    hashmap_clear(hashmap_ptr);
-    for (int i = 1; i < hashmap_ptr->size; i++)
+    struct key_value** data_buf = calloc(hashmap->size, hashmap->data_size); 
+    memcpy(data_buf, hashmap->data, hashmap->size * hashmap->data_size);
+    hashmap_clear(hashmap);
+    for (int i = 1; i < hashmap->size; i++)
     {
         if (data_buf[i] != NULL)
         {
-            hashmap_put(hashmap_ptr, data_buf[i]->key, data_buf[i]->value);
+            hashmap_put(hashmap, data_buf[i]->key, data_buf[i]->value);
         }
     }
     free(data_buf);
 }
 
-static void hashmap_fill_hole(struct hashmap* hashmap_ptr, const uint32_t index)
+static void hashmap_fill_hole(struct hashmap* hashmap, const uint32_t index)
 {
     uint32_t index_delta = 1; 
-    while (hashmap_ptr->data[(index + index_delta) % hashmap_ptr->size] != NULL)
+    while (hashmap->data[(index + index_delta) % hashmap->size] != NULL)
     {
-        struct key_value* data_ptr = hashmap_ptr->data[(index + index_delta) % hashmap_ptr->size];
-        uint32_t new_index = hash_data(data_ptr->key, hashmap_ptr->size, hashmap_ptr->string_hash);
-        if (!(0 < (new_index - index) % hashmap_ptr->size && (new_index - index) % hashmap_ptr->size <= index_delta))
+        struct key_value* data = hashmap->data[(index + index_delta) % hashmap->size];
+        uint32_t new_index = hash_data(data->key, hashmap->size, hashmap->string_hash);
+        if (!(0 < (new_index - index) % hashmap->size && (new_index - index) % hashmap->size <= index_delta))
         {
-            hashmap_ptr->data[index] = data_ptr;
-            hashmap_ptr->data[index + index_delta % hashmap_ptr->size] = NULL;
-            hashmap_fill_hole(hashmap_ptr, new_index);
+            hashmap->data[index] = data;
+            hashmap->data[index + index_delta % hashmap->size] = NULL;
+            hashmap_fill_hole(hashmap, new_index);
             return;
         }
         index_delta++;
     }
 }
 
-struct hashmap* hashmap_create(const size_t size, const bool string_hash)
+struct hashmap* hashmap_create(const uint64_t size, const bool string_hash)
 {
-    struct hashmap* hashmap_ptr = calloc(1, sizeof(struct hashmap));
-    if (!hashmap_ptr) 
+    struct hashmap* hashmap = calloc(1, sizeof(struct hashmap));
+    if (!hashmap) 
     { 
         fprintf(stderr, "hashmap_create: hashmap malloc failed\n");
         return NULL; 
     }
 
-    hashmap_ptr->size = size;
-    hashmap_ptr->data_size = sizeof(struct key_value*);
-    hashmap_ptr->string_hash = string_hash;
-    hashmap_ptr->count = 0;
+    hashmap->size = size;
+    hashmap->data_size = sizeof(struct key_value*);
+    hashmap->string_hash = string_hash;
+    hashmap->count = 0;
 
-    hashmap_ptr->data = calloc((1 + size), hashmap_ptr->data_size);
-    if (!hashmap_ptr->data) 
+    hashmap->data = calloc((1 + size), hashmap->data_size);
+    if (!hashmap->data) 
     {
         fprintf(stderr, "hashmap_create: data malloc failed\n");
-        free(hashmap_ptr);
+        free(hashmap);
         return NULL;
     }
 
-    return hashmap_ptr;
+    return hashmap;
 }
 
-void hashmap_destroy(struct hashmap* hashmap_ptr)
+void hashmap_destroy(struct hashmap* hashmap)
 {
-    free(hashmap_ptr->data);
-    free(hashmap_ptr);
-    for (int i = 1; i <= hashmap_ptr->count; i++)
+    free(hashmap->data);
+    free(hashmap);
+    for (int i = 1; i <= hashmap->count; i++)
     {
-        free(hashmap_ptr->data[i]->key);
-        free(hashmap_ptr->data[i]->value);
-        free(hashmap_ptr->data[i]);
+        free(hashmap->data[i]->key);
+        free(hashmap->data[i]->value);
+        free(hashmap->data[i]);
     }
 }
 
-void hashmap_put(struct hashmap* hashmap_ptr, void* key_ptr, void* value_ptr)
+void hashmap_put(struct hashmap* hashmap, void* key, void* value)
 {
-    if (hashmap_ptr->count >= hashmap_ptr->size / 2)
+    if (hashmap->count >= hashmap->size / 2)
     {
-        if (!hashmap_realloc(hashmap_ptr, hashmap_ptr->data_size + (hashmap_ptr->size * 2) * hashmap_ptr->data_size))
+        if (!hashmap_realloc(hashmap, hashmap->data_size + (hashmap->size * 2) * hashmap->data_size))
         {
             return;
         }
-        hashmap_ptr->size *= 2;
-        hashmap_rehash(hashmap_ptr);
+        hashmap->size *= 2;
+        hashmap_rehash(hashmap);
     }
 
-    uint32_t index = hash_data(key_ptr, hashmap_ptr->size, hashmap_ptr->string_hash);
+    uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);
 
-    struct key_value* key_value_ptr = calloc(1, sizeof(struct key_value));
-    key_value_ptr->key = key_ptr;
-    key_value_ptr->value = value_ptr;
+    struct key_value* key_value = calloc(1, sizeof(struct key_value));
+    key_value->key = key;
+    key_value->value = value;
 
-    while (hashmap_ptr->data[1 + index] != NULL)
+    while (hashmap->data[1 + index] != NULL)
     {
-        if (key_equals(hashmap_ptr->data[1 + index]->key, key_ptr, hashmap_ptr->string_hash))
+        if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
         {
             return;
         }
-        index = (index + 1) % hashmap_ptr->size;
+        index = (index + 1) % hashmap->size;
     }
-    hashmap_ptr->data[1 + index] = key_value_ptr;
-    hashmap_ptr->count++;
+    hashmap->data[1 + index] = key_value;
+    hashmap->count++;
 }
 
-void* hashmap_remove(struct hashmap* hashmap_ptr, const void* key_ptr)
+void* hashmap_remove(struct hashmap* hashmap, const void* key)
 {
-    uint32_t index = hash_data(key_ptr, hashmap_ptr->size, hashmap_ptr->string_hash);    
-    while (hashmap_ptr->data[1 + index] != NULL)
+    uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);    
+    while (hashmap->data[1 + index] != NULL)
     {
-        if (key_equals(hashmap_ptr->data[1 + index]->key, key_ptr, hashmap_ptr->string_hash))
+        if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
         {
-            void* value = hashmap_ptr->data[1 + index]->value;
-            free(hashmap_ptr->data[1 + index]);
-            hashmap_ptr->data[1 + index] = NULL;
-            hashmap_ptr->count--;
-            hashmap_fill_hole(hashmap_ptr, 1 + index);
+            void* value = hashmap->data[1 + index]->value;
+            free(hashmap->data[1 + index]);
+            hashmap->data[1 + index] = NULL;
+            hashmap->count--;
+            hashmap_fill_hole(hashmap, 1 + index);
             return value;
         }
-        index = (index + 1) % hashmap_ptr->size;
+        index = (index + 1) % hashmap->size;
     }
     fprintf(stderr, "hashmap_remove: value not in hashmap.\n");
     return NULL;
 }
 
-void hashmap_clear(struct hashmap* hashmap_ptr)
+void hashmap_clear(struct hashmap* hashmap)
 {
-    for (int i = 0; i < hashmap_ptr->size; i++)
+    for (int i = 0; i < hashmap->size; i++)
     {
-        hashmap_ptr->data[i] = NULL;
+        hashmap->data[i] = NULL;
     }
-    hashmap_ptr->count = 0;
+    hashmap->count = 0;
 }
 
-void* hashmap_get(const struct hashmap* hashmap_ptr, const void* key_ptr)
+void* hashmap_get(const struct hashmap* hashmap, const void* key)
 {
-    uint32_t index = hash_data(key_ptr, hashmap_ptr->size, hashmap_ptr->string_hash);
-    while (hashmap_ptr->data[1 + index] != NULL)
+    uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);
+    while (hashmap->data[1 + index] != NULL)
     {
-        if (key_equals(hashmap_ptr->data[1 + index]->key, key_ptr, hashmap_ptr->string_hash))
+        if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
         {
-            return hashmap_ptr->data[1 + index]->value;
+            return hashmap->data[1 + index]->value;
         }
-        index = (index + 1) % hashmap_ptr->size;
+        index = (index + 1) % hashmap->size;
     }
     fprintf(stderr, "hashmap_get: value not in hashmap.\n");
     return NULL;
 }
 
-bool hashmap_has_key(const struct hashmap* hashmap_ptr, const void* key_ptr)
+bool hashmap_has_key(const struct hashmap* hashmap, const void* key)
 {
-    uint32_t index = hash_data(key_ptr, hashmap_ptr->size, hashmap_ptr->string_hash);
-    while (hashmap_ptr->data[1 + index] != NULL)
+    uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);
+    while (hashmap->data[1 + index] != NULL)
     {
-        if (key_equals(hashmap_ptr->data[1 + index]->key, key_ptr, hashmap_ptr->string_hash))
+        if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
         {
             return true;
         }
-        index = (index + 1) % hashmap_ptr->size;
+        index = (index + 1) % hashmap->size;
     }
     return false;
 }

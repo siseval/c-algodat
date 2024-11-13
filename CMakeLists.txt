@@ -7,4 +7,6 @@ add_executable(
         list.c
         hashmap.c
         hashset.c
+        stack.c
+        heap.c
     )
