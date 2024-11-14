@@ -24,7 +24,8 @@ struct hashmap
     struct key_value** data;
 };
 
-struct hashmap* hashmap_create(const uint64_t size, const bool string_type); void hashmap_destroy(struct hashmap* hashmap);
+struct hashmap* hashmap_create(const uint64_t size, const bool string_type); 
+void hashmap_destroy(struct hashmap* hashmap);
 
 void hashmap_put(struct hashmap* hashmap, void* key, void* value);
 void* hashmap_remove(struct hashmap* hashmap, const void* key);

@@ -1,5 +1,4 @@
 #include "stack.h"
-#include "list.h"
 
 
 struct stack* stack_create(uint64_t size)
