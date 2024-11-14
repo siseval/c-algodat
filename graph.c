@@ -50,7 +50,69 @@ void graph_update_weight(struct graph* graph, void* from, void* to, const int64_
 }
 
 
-struct list* graph_get_vertex_edges(struct graph* graph, void* vertex)
+static struct list* path_from_parent_map(struct hashmap* parent_map, void* start, void* goal)
+{
+    struct list* path_list = list_create(32);
+    void* cur_vertex = goal;
+    while (cur_vertex != start)
+    {
+        list_append(path_list, cur_vertex);
+        cur_vertex = hashmap_get(parent_map, cur_vertex);
+    }
+    list_append(path_list, start);
+    return path_list;
+}
+
+struct list* graph_shortest_path(struct graph* graph, void* start, void* goal)
+{
+    struct hashset* visited = hashset_create(32, false);
+    struct hashmap* parents = hashmap_create(32, false);
+    struct queue* to_visit = queue_create(32);
+
+    queue_enqueue(to_visit, start);
+    bool goal_found = false;
+    while (to_visit->count > 0)
+    {
+        void* cur_vertex = queue_dequeue(to_visit);
+        hashset_put(visited, cur_vertex);
+        struct list* cur_vertex_neighbours = graph_get_vertex_neighbours(graph, cur_vertex);
+
+        for (uint64_t i = 0 ; i < cur_vertex_neighbours->count; i++)
+        {
+            void* neighbor = list_get(cur_vertex_neighbours, i);
+            if (!hashset_contains(visited, neighbor))
+            {
+                hashmap_put(parents, neighbor, cur_vertex);
+                queue_enqueue(to_visit, neighbor);
+            }
+            if (neighbor == goal)
+            {
+                goal_found = true;
+                break;
+            }
+        }
+        list_destroy(cur_vertex_neighbours);
+        if (goal_found)
+        {
+            break;
+        }
+    }
+
+    if (!goal_found)
+    {
+        fprintf(stderr, "graph_shortest_path: path not found.");
+        return NULL;
+    }
+
+    struct list* path_list = path_from_parent_map(parents, start, goal);
+    hashset_destroy(visited);
+    hashmap_destroy(parents);
+    queue_destroy(to_visit);
+    return path_list;
+}
+
+
+struct list* graph_get_vertex_neighbours(struct graph* graph, void* vertex)
 {
     return hashmap_get(graph->edges, vertex);
 }
@@ -62,7 +124,7 @@ void graph_print_int(struct graph* graph)
     {
         void* vertex = list_get(graph->vertices_list, i);
         printf("\n%lld => ", (uint64_t)vertex);
-        list_print_char(graph_get_vertex_edges(graph, vertex));
+        list_print_char(graph_get_vertex_neighbours(graph, vertex));
     }
 }
 
@@ -73,7 +135,7 @@ void graph_print_char(struct graph* graph)
     {
         void* vertex = list_get(graph->vertices_list, i);
         printf("\n%c => ", (char)(uint64_t)vertex);
-        list_print_char(graph_get_vertex_edges(graph, vertex));
+        list_print_char(graph_get_vertex_neighbours(graph, vertex));
     }
 }
 

@@ -90,7 +90,7 @@ void* list_remove(struct list* list, const uint64_t index)
         fprintf(stderr, "list_remove: index out of bounds\n");
         return NULL;
     }
-    void* data_buf = list->data[index];
+    void* data_buf = list->data[1 + index];
 
     for (int i = index + 2; i <= list->count; i++)
     {

@@ -40,4 +40,3 @@ void* stack_peek(struct stack* stack)
 {
     return list_get(stack->list, stack->count - 1);
 }
-
