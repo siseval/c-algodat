@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include "list.h"
 
+#define stack(T) stack_create(32)
+
 struct stack
 {
     uint64_t count;

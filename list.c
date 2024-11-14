@@ -80,7 +80,7 @@ void list_insert(struct list* list, void* data, const uint64_t index)
 
 void list_replace(struct list* list, void* data, const uint64_t index)
 {
-    list->data[index] = list;
+    list->data[1 + index] = data;
 }
 
 void* list_remove(struct list* list, const uint64_t index)
@@ -112,7 +112,7 @@ void* list_get(struct list* list, const uint64_t index)
 {
     if (index >= list->count)
     {
-        fprintf(stderr, "list_get: index out of bounds\n");
+        fprintf(stderr, "list_get: index out of bounds: %lld\n", index);
         return NULL;
     }
     return list->data[1 + index];
@@ -128,4 +128,15 @@ bool list_contains(struct list* list, const void* data)
         }
     }
     return false;
+}
+
+
+void list_print(struct list* list)
+{
+    printf("\n(");
+    for (uint64_t i = 0; i < list->count; i++)
+    {
+        printf(i == list->count - 1 ? "%lld" : "%lld, ", (uint64_t)list_get(list, i));
+    }
+    printf(")");
 }

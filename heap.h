@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include "list.h"
 
+#define heap(T) heap_create(32)
+
 struct heap
 {
     uint64_t count;

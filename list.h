@@ -30,4 +30,6 @@ void list_clear(struct list* list);
 void* list_get(struct list* list, const uint64_t index);
 bool list_contains(struct list* list, const void* data);
 
+void list_print(struct list* list);
+
 #endif

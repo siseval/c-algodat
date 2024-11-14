@@ -28,6 +28,12 @@ void stack_push(struct stack* stack, void* data)
 
 void* stack_pop(struct stack* stack)
 {
+    if (stack->count <= 0)
+    {
+        fprintf(stderr, "stack_pop: stack is empty");
+        return NULL;
+    }
+    stack->count--;
     return list_remove(stack->list, stack->count - 1);
 }
 
