@@ -55,8 +55,19 @@ struct list* graph_get_vertex_edges(struct graph* graph, void* vertex)
     return hashmap_get(graph->edges, vertex);
 }
 
+void graph_print_int(struct graph* graph)
+
+{
+    for (uint64_t i = 0; i < graph->num_vertices; i++)
+    {
+        void* vertex = list_get(graph->vertices_list, i);
+        printf("\n%lld => ", (uint64_t)vertex);
+        list_print_char(graph_get_vertex_edges(graph, vertex));
+    }
+}
 
 void graph_print_char(struct graph* graph)
+
 {
     for (uint64_t i = 0; i < graph->num_vertices; i++)
     {

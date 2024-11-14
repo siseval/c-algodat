@@ -10,4 +10,5 @@ add_executable(
         stack.c
         heap.c
         graph.c
+        queue.c
     )
