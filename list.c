@@ -131,12 +131,22 @@ bool list_contains(struct list* list, const void* data)
 }
 
 
-void list_print(struct list* list)
+void list_print_int(struct list* list)
 {
-    printf("\n(");
+    printf("(");
     for (uint64_t i = 0; i < list->count; i++)
     {
         printf(i == list->count - 1 ? "%lld" : "%lld, ", (uint64_t)list_get(list, i));
+    }
+    printf(")");
+}
+
+void list_print_char(struct list* list)
+{
+    printf("(");
+    for (uint64_t i = 0; i < list->count; i++)
+    {
+        printf(i == list->count - 1 ? "%c" : "%c, ", (char)(uint64_t)list_get(list, i));
     }
     printf(")");
 }
