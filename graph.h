@@ -9,10 +9,12 @@
 #include "hashset.h"
 #include "queue.h"
 
-#define graph(T) graph_create()
+#define graph(T) graph_create(false)
+#define directed_graph(T) graph_create(true)
 
 struct graph
 {
+    bool is_directed;
     uint64_t num_vertices;
     uint64_t num_edges;
     struct hashset* vertices;
@@ -21,7 +23,7 @@ struct graph
     struct list* vertices_list;
 };
 
-struct graph* graph_create(void);
+struct graph* graph_create(const bool is_directed);
 void graph_destroy(struct graph* graph);
 
 void graph_add_vertex(struct graph* graph, void* value);
@@ -31,7 +33,7 @@ void graph_update_weight(struct graph* graph, void* from, void* to, const int64_
 
 struct list* graph_shortest_path(struct graph* graph, void* start, void* goal);
 
-struct list* graph_get_vertex_neighbours(struct graph* graph, void* vertex);
+struct list* graph_get_vertex_neighbors(struct graph* graph, void* vertex);
 
 void graph_print_int(struct graph* graph);
 void graph_print_char(struct graph* graph);

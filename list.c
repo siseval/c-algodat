@@ -83,6 +83,7 @@ void list_replace(struct list* list, void* data, const uint64_t index)
     list->data[1 + index] = data;
 }
 
+
 void* list_remove(struct list* list, const uint64_t index)
 {
     if (index >= list->count)
@@ -107,6 +108,25 @@ void list_clear(struct list* list)
 {
     list->count = 0;
 }
+
+
+struct list* list_reverse(struct list* list)
+{
+    uint64_t left_index = 0;
+    uint64_t right_index = list->count - 1;
+
+    while (left_index < right_index)
+    {
+        void* left_data = list_get(list, left_index);
+        void* right_data = list_get(list, right_index);
+        list_replace(list, left_data, right_index);
+        list_replace(list, right_data, left_index);
+        left_index++;
+        right_index--;
+    }
+    return list;
+}
+
 
 void* list_get(struct list* list, const uint64_t index)
 {

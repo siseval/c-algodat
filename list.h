@@ -27,6 +27,8 @@ void list_replace(struct list* list, void* data, const uint64_t index);
 void* list_remove(struct list* list, const uint64_t index);
 void list_clear(struct list* list);
 
+struct list* list_reverse(struct list* list);
+
 void* list_get(struct list* list, const uint64_t index);
 bool list_contains(struct list* list, const void* data);
 
