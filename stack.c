@@ -29,7 +29,7 @@ void* stack_pop(struct stack* stack)
 {
     if (stack->count <= 0)
     {
-        fprintf(stderr, "stack_pop: stack is empty");
+        fprintf(stderr, "stack_pop: stack is empty\n");
         return NULL;
     }
     stack->count--;

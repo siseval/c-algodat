@@ -29,10 +29,10 @@ void list_clear(struct list* list);
 
 struct list* list_reverse(struct list* list);
 
-void* list_get(struct list* list, const uint64_t index);
-bool list_contains(struct list* list, const void* data);
+void* list_get(const struct list* list, const uint64_t index);
+bool list_contains(const struct list* list, const void* data);
 
-void list_print_int(struct list* list);
-void list_print_char(struct list* list);
+void list_print_int(const struct list* list);
+void list_print_char(const struct list* list);
 
 #endif

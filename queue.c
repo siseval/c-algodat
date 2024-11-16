@@ -29,7 +29,7 @@ void* queue_dequeue(struct queue* queue)
 {
     if (queue->count <= 0)
     {
-        fprintf(stderr, "queue_pop: queue is empty");
+        fprintf(stderr, "queue_pop: queue is empty\n");
         return NULL;
     }
     queue->count--;

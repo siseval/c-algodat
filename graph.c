@@ -8,7 +8,6 @@ struct graph* graph_create(const bool is_directed)
     graph->is_directed = is_directed;
     graph->vertices = hashset_create(32, false);
     graph->edges = hashmap_create(32, false);
-    graph->weights = hashmap_create(32, false);
     graph->vertices_list = list_create(32);
 
     return graph;
@@ -18,11 +17,15 @@ void graph_destroy(struct graph* graph)
 {
     for (uint64_t i = 0; i < graph->num_vertices; i++)
     {
-        list_destroy(graph_get_vertex_neighbors(graph, list_get(graph->vertices_list, i)));
+        struct list* vertex_weights = graph_get_vertex_edges(graph, list_get(graph->vertices_list, i));
+        for (uint64_t i = 0; i < vertex_weights->count; i++)
+        {
+            free(list_get(vertex_weights, i));
+        }
+        list_destroy(vertex_weights);
     }
     hashset_destroy(graph->vertices);
     hashmap_destroy(graph->edges);
-    hashmap_destroy(graph->weights);
     free(graph);
 }
 
@@ -46,10 +49,18 @@ void graph_add_edge(struct graph* graph, void* from, void* to)
     {
         graph_add_vertex(graph, to);
     }
-    list_append(hashmap_get(graph->edges, from), to);
+
+    struct vertex_weight* to_weight = malloc(sizeof(struct vertex_weight));
+    to_weight->vertex = to;
+    to_weight->weight = 0;
+
+    list_append(hashmap_get(graph->edges, from), to_weight);
     if (!graph->is_directed)
     {
-        list_append(hashmap_get(graph->edges, to), from);
+        struct vertex_weight* from_weight = malloc(sizeof(struct vertex_weight));
+        from_weight->vertex = from;
+        from_weight->weight = 0;
+        list_append(hashmap_get(graph->edges, to), from_weight);
     }
     graph->num_edges++;
 }
@@ -62,13 +73,57 @@ void graph_add_weighted_edge(struct graph* graph, void* from, void* to, const in
 
 void graph_update_weight(struct graph* graph, void* from, void* to, const int64_t weight)
 {
-    void* edge[] = { from, to };
-    hashmap_put(graph->weights, edge, (void*)weight);
-    if (!graph->is_directed)
+    struct list* from_neighbors = graph_get_vertex_edges(graph, from);
+    for (uint64_t i = 0; i < from_neighbors->count; i++)
     {
-        void* back_edge[] = { to, from };
-        hashmap_put(graph->weights, back_edge, (void*)weight);
+        struct vertex_weight* to_weight = (struct vertex_weight*)list_get(from_neighbors, i);
+        if (to_weight->vertex == to)
+        {
+            to_weight->weight = weight;
+        }
     }
+
+    if (graph->is_directed)
+    {
+        return;
+    }
+
+    struct list* to_neighbors = graph_get_vertex_edges(graph, to);
+    for (uint64_t i = 0; i < to_neighbors->count; i++)
+    {
+        struct vertex_weight* from_weight = (struct vertex_weight*)list_get(to_neighbors, i);
+        if (from_weight->vertex == from)
+        {
+            from_weight->weight = weight;
+        }
+    }
+}
+
+
+static struct vertex_weight* get_vertex_weight(const struct graph* graph, void* from, void* to)
+{
+    struct list* vertex_weights = graph_get_vertex_edges(graph, from);
+    for (uint64_t i = 0; i < vertex_weights->count; i++)
+    {
+        struct vertex_weight* vertex_weight = list_get(vertex_weights, i);
+        if (vertex_weight->vertex == to)
+        {
+            return vertex_weight;
+        }
+    }
+    fprintf(stderr, "get_vertex_weight: vertex_weight not found.\n");
+    return NULL;
+}
+
+uint64_t graph_get_edge_weight(const struct graph* graph, void* from, void* to)
+{
+    struct vertex_weight* vertex_weight = get_vertex_weight(graph, from, to);
+    if (vertex_weight == NULL)
+    {
+        fprintf(stderr, "graph_get_weight: edge does not exist.\n");
+        return 0;
+    }
+    return vertex_weight->weight;
 }
 
 
@@ -85,7 +140,18 @@ static struct list* path_from_parent_map(struct hashmap* parent_map, void* start
     return list_reverse(path_list);
 }
 
-struct list* graph_shortest_path(struct graph* graph, void* start, void* goal)
+uint64_t graph_path_weight(const struct graph* graph, const struct list* path)
+{
+    uint64_t accumulated_weight = 0;
+    for (uint64_t i = 0; i < path->count - 1; i++)
+    {
+        uint64_t edge_weight = graph_get_edge_weight(graph, list_get(path, i), list_get(path, i + 1));
+        accumulated_weight += edge_weight;
+    }
+    return accumulated_weight;
+}
+
+struct list* graph_shortest_path(const struct graph* graph, void* start, void* goal)
 {
     struct hashset* visited = hashset_create(32, false);
     struct hashmap* parents = hashmap_create(32, false);
@@ -96,11 +162,12 @@ struct list* graph_shortest_path(struct graph* graph, void* start, void* goal)
     while (to_visit->count > 0)
     {
         void* cur_vertex = queue_dequeue(to_visit);
-        struct list* cur_vertex_neighbors = graph_get_vertex_neighbors(graph, cur_vertex);
+        struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
 
         for (uint64_t i = 0 ; i < cur_vertex_neighbors->count; i++)
         {
-            void* neighbor = list_get(cur_vertex_neighbors, i);
+            struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
+            void* neighbor = neighbor_weight->vertex;
             if (!hashset_contains(visited, neighbor))
             {
                 hashmap_put(parents, neighbor, cur_vertex);
@@ -123,7 +190,7 @@ struct list* graph_shortest_path(struct graph* graph, void* start, void* goal)
 
     if (!goal_found)
     {
-        fprintf(stderr, "graph_shortest_path: path not found.");
+        fprintf(stderr, "graph_shortest_path: path not found.\n");
     }
     else
     {
@@ -136,31 +203,123 @@ struct list* graph_shortest_path(struct graph* graph, void* start, void* goal)
     return path_list;
 }
 
+struct list* graph_lightest_path(const struct graph* graph, void* start, void* goal)
+{
+    struct hashmap* parents = hashmap_create(32, false);
+    struct heap* to_visit = heap_create(32, true);
+    struct hashmap* distances = hashmap_create(32, false);
+    
+    for (uint64_t i = 0; i < graph->num_vertices; i++)
+    {
+        hashmap_put(distances, list_get(graph->vertices_list, i), (uint64_t*)INT_MAX);
+    }
+    hashmap_put(distances, start, (uint64_t*)0);
 
-struct list* graph_get_vertex_neighbors(struct graph* graph, void* vertex)
+    void* distance_start[] = { (uint64_t*)0, start };
+    heap_push(to_visit, distance_start);
+    bool goal_found = false;
+
+    while (to_visit->count > 0)
+    {
+        void** distance_vertex = heap_pop(to_visit);
+        void* cur_vertex = distance_vertex[1];
+        char cur_vertex_char = (char)(uint64_t)cur_vertex;
+        uint64_t cur_cost = (uint64_t)distance_vertex[0];
+        if (cur_vertex == goal)
+        {
+            goal_found = true;
+            break;
+        }
+        uint64_t cur_distance = (uint64_t)hashmap_get(distances, cur_vertex);
+        struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
+        
+        for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
+        {
+            struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
+            void* neighbor = neighbor_weight->vertex;
+            char neighbor_char = (char)(uint64_t)neighbor;
+            uint64_t weight = neighbor_weight->weight;
+
+            uint64_t distance = cur_distance + weight;
+
+            if (distance >= (uint64_t)hashmap_get(distances, neighbor))
+            {
+                continue;
+            }
+
+            hashmap_put(parents, neighbor, cur_vertex);
+            hashmap_put(distances, neighbor, (uint64_t*)distance);
+            void* distance_vertex[] = { (uint64_t*)distance, neighbor };
+            heap_push(to_visit, distance_vertex);
+        }
+        if (goal_found)
+        {
+            break;
+        }
+    }
+
+    struct list* path_list = NULL;
+    if (!goal_found)
+    {
+        fprintf(stderr, "graph_lightest_path: path not found.\n");
+    }
+    else
+    {
+        path_list = path_from_parent_map(parents, start, goal);;
+    }
+
+    hashmap_destroy(parents);
+    hashmap_destroy(distances);
+    heap_destroy(to_visit);
+    return path_list;
+}
+
+
+struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex)
 {
     return hashmap_get(graph->edges, vertex);
 }
 
-void graph_print_int(struct graph* graph)
 
+void graph_print_vertex_neighbors_char(const struct graph* graph, void* vertex)
+{
+    struct list* vertex_neigbor_weights = graph_get_vertex_edges(graph, vertex);
+    printf("(");
+    for (uint64_t i = 0; i < vertex_neigbor_weights->count; i++)
+    {
+        printf(i == vertex_neigbor_weights->count - 1 ? "%c, " : "%c", (char)(uint64_t)list_get(vertex_neigbor_weights, i));
+    }
+    printf(")");
+}
+
+void graph_print_vertex_neighbors_int(const struct graph* graph, void* vertex)
+{
+    struct list* vertex_neigbor_weights = graph_get_vertex_edges(graph, vertex);
+    printf("(");
+    for (uint64_t i = 0; i < vertex_neigbor_weights->count; i++)
+    {
+        printf(i == vertex_neigbor_weights->count - 1 ? "%lld, " : "%lld", (uint64_t)list_get(vertex_neigbor_weights, i));
+    }
+    printf(")");
+}
+
+void graph_print_int(const struct graph* graph)
 {
     for (uint64_t i = 0; i < graph->num_vertices; i++)
     {
         void* vertex = list_get(graph->vertices_list, i);
         printf("\n%lld => ", (uint64_t)vertex);
-        list_print_char(graph_get_vertex_neighbors(graph, vertex));
+        graph_print_vertex_neighbors_int(graph, vertex);
     }
 }
 
-void graph_print_char(struct graph* graph)
-
+void graph_print_char(const struct graph* graph)
 {
     for (uint64_t i = 0; i < graph->num_vertices; i++)
     {
         void* vertex = list_get(graph->vertices_list, i);
         printf("\n%c => ", (char)(uint64_t)vertex);
-        list_print_char(graph_get_vertex_neighbors(graph, vertex));
+        graph_print_vertex_neighbors_char(graph, vertex);
     }
 }
 

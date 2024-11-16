@@ -98,7 +98,7 @@ void* list_remove(struct list* list, const uint64_t index)
         list->data[(i - 1)] = list->data[i];
     }
 
-    list->data[1 + list->count] = NULL;
+    list->data[list->count] = NULL;
     list->count--;
 
     return data_buf;
@@ -128,7 +128,7 @@ struct list* list_reverse(struct list* list)
 }
 
 
-void* list_get(struct list* list, const uint64_t index)
+void* list_get(const struct list* list, const uint64_t index)
 {
     if (index >= list->count)
     {
@@ -138,7 +138,7 @@ void* list_get(struct list* list, const uint64_t index)
     return list->data[1 + index];
 }
 
-bool list_contains(struct list* list, const void* data)
+bool list_contains(const struct list* list, const void* data)
 {
     for (int i = 0; i < list->count; i++)
     {
@@ -151,7 +151,7 @@ bool list_contains(struct list* list, const void* data)
 }
 
 
-void list_print_int(struct list* list)
+void list_print_int(const struct list* list)
 {
     printf("(");
     for (uint64_t i = 0; i < list->count; i++)
@@ -161,7 +161,7 @@ void list_print_int(struct list* list)
     printf(")");
 }
 
-void list_print_char(struct list* list)
+void list_print_char(const struct list* list)
 {
     printf("(");
     for (uint64_t i = 0; i < list->count; i++)

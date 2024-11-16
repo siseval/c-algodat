@@ -128,18 +128,20 @@ void hashmap_put(struct hashmap* hashmap, void* key, void* value)
 
     uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);
 
-    struct key_value* key_value = calloc(1, sizeof(struct key_value));
-    key_value->key = key;
-    key_value->value = value;
-
     while (hashmap->data[1 + index] != NULL)
     {
         if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
         {
+            hashmap->data[1 + index]->value = value;
             return;
         }
         index = (index + 1) % hashmap->size;
     }
+
+    struct key_value* key_value = calloc(1, sizeof(struct key_value));
+    key_value->key = key;
+    key_value->value = value;
+
     hashmap->data[1 + index] = key_value;
     hashmap->count++;
 }
