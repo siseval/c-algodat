@@ -1,15 +1,15 @@
 #include "hashmap.h"
 
 
-static uint32_t hash_integer(const void* data, const uint32_t mod)
+static uint64_t hash_integer(const void* data, const uint64_t mod)
 {
-    uint32_t hash = (((uint32_t)(mod * 0.00003) * ((uint64_t)data)));
+    uint64_t hash = (((uint64_t)(mod * 0.00003) * ((uint64_t)data)));
     return hash % mod;
 }
 
-static uint32_t hash_string(const char* data, const uint32_t mod)
+static uint64_t hash_string(const char* data, const uint64_t mod)
 {
-    uint32_t hash = 7;
+    uint64_t hash = 7;
     for (int i = 0; i < strlen(data); i++)
     {
         hash = 31 * hash + data[i];
@@ -17,7 +17,7 @@ static uint32_t hash_string(const char* data, const uint32_t mod)
     return hash % mod;
 }
 
-static uint32_t hash_data(const void* data, const uint32_t mod, bool string_hash)
+static uint64_t hash_data(const void* data, const uint64_t mod, bool string_hash)
 {
     return string_hash ? hash_string(data, mod) : hash_integer(data, mod); 
 }
@@ -59,13 +59,13 @@ static void hashmap_rehash(struct hashmap* hashmap)
     free(data_buf);
 }
 
-static void hashmap_fill_hole(struct hashmap* hashmap, const uint32_t index)
+static void hashmap_fill_hole(struct hashmap* hashmap, const uint64_t index)
 {
-    uint32_t index_delta = 1; 
+    uint64_t index_delta = 1; 
     while (hashmap->data[(index + index_delta) % hashmap->size] != NULL)
     {
         struct key_value* data = hashmap->data[(index + index_delta) % hashmap->size];
-        uint32_t new_index = hash_data(data->key, hashmap->size, hashmap->string_hash);
+        uint64_t new_index = hash_data(data->key, hashmap->size, hashmap->string_hash);
         if (!(0 < (new_index - index) % hashmap->size && (new_index - index) % hashmap->size <= index_delta))
         {
             hashmap->data[index] = data;
@@ -126,7 +126,7 @@ void hashmap_put(struct hashmap* hashmap, void* key, void* value)
         hashmap_rehash(hashmap);
     }
 
-    uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);
+    uint64_t index = hash_data(key, hashmap->size, hashmap->string_hash);
 
     while (hashmap->data[1 + index] != NULL)
     {
@@ -148,7 +148,7 @@ void hashmap_put(struct hashmap* hashmap, void* key, void* value)
 
 void* hashmap_remove(struct hashmap* hashmap, const void* key)
 {
-    uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);    
+    uint64_t index = hash_data(key, hashmap->size, hashmap->string_hash);    
     while (hashmap->data[1 + index] != NULL)
     {
         if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
@@ -177,7 +177,7 @@ void hashmap_clear(struct hashmap* hashmap)
 
 void* hashmap_get(const struct hashmap* hashmap, const void* key)
 {
-    uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);
+    uint64_t index = hash_data(key, hashmap->size, hashmap->string_hash);
     while (hashmap->data[1 + index] != NULL)
     {
         if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
@@ -192,7 +192,7 @@ void* hashmap_get(const struct hashmap* hashmap, const void* key)
 
 bool hashmap_has_key(const struct hashmap* hashmap, const void* key)
 {
-    uint32_t index = hash_data(key, hashmap->size, hashmap->string_hash);
+    uint64_t index = hash_data(key, hashmap->size, hashmap->string_hash);
     while (hashmap->data[1 + index] != NULL)
     {
         if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))

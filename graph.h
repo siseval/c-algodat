@@ -45,6 +45,7 @@ uint64_t graph_path_weight(const struct graph* graph, const struct list* path);
 
 struct list* graph_shortest_path(const struct graph* graph, void* start, void* goal);
 struct list* graph_lightest_path(const struct graph* graph, void* start, void* goal);
+struct graph* graph_min_spanning_tree(const struct graph* graph);
 
 struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex);
 

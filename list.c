@@ -18,10 +18,10 @@ static bool list_realloc(struct list* list, uint64_t size)
 struct list* list_create(const uint64_t size)
 {
     struct list* list = calloc(1, sizeof(struct list));
-    if (!list) 
-    { 
+    if (!list)
+    {
         fprintf(stderr, "list_create: list malloc failed\n");
-        return NULL; 
+        return NULL;
     }
 
     list->size = size;

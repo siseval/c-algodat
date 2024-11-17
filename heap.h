@@ -15,7 +15,7 @@ struct heap
     bool takes_arrays;
 };
 
-struct heap_element
+struct data_priority
 {
     void* data;
     uint64_t priority;
@@ -25,7 +25,6 @@ struct heap* heap_create(uint64_t size, bool takes_arrays);
 void heap_destroy(struct heap* heap);
 
 void heap_push(struct heap* heap, void* data);
-void heap_push_priority(struct heap* heap, void* data, uint64_t prioriry);
 void* heap_pop(struct heap* heap);
 void* heap_peek(struct heap* heap);
 

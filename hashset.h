@@ -26,6 +26,7 @@ void* hashset_remove(struct hashset* hashset, const void* data);
 void hashset_clear(struct hashset* hashset);
 
 void* hashset_get(const struct hashset* hashset, const void* data);
+void* hashset_get_random(const struct hashset* hashset);
 bool hashset_contains(const struct hashset* hashset, const void* data);
 
 #endif
