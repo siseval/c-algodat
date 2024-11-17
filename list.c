@@ -61,6 +61,12 @@ void list_append(struct list* list, void* data)
 
 void list_insert(struct list* list, void* data, const uint64_t index)
 {
+    if (index >= list->count)
+    {
+        fprintf(stderr, "list_index: index out of bounds\n");
+        return;
+    }
+ 
     if (list->count >= list->size)
     {
         if (!list_realloc(list, list->data_size + (list->size * 2) * list->data_size))
@@ -80,6 +86,12 @@ void list_insert(struct list* list, void* data, const uint64_t index)
 
 void list_replace(struct list* list, void* data, const uint64_t index)
 {
+        if (index >= list->count)
+        {
+            fprintf(stderr, "list_replace: index out of bounds\n");
+            return;
+        }
+
     list->data[1 + index] = data;
 }
 
