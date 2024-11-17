@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define hashset(T) hashset_create(32, !strcmp(#T, "str") || !strcmp(#T, "char*"))
 

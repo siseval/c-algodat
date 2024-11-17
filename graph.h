@@ -49,6 +49,8 @@ struct graph* graph_min_spanning_tree(const struct graph* graph);
 
 struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex);
 
+struct graph* graph_reverse_direction(struct graph* graph);
+
 void graph_print_vertex_neighbors_char(const struct graph* graph, void* vertex);
 void graph_print_vertex_neighbors_int(const struct graph* graph, void* vertex);
 void graph_print_int(const struct graph* graph);

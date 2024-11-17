@@ -330,7 +330,7 @@ struct graph* graph_min_spanning_tree(const struct graph* graph)
     }
 
     heap_destroy(to_visit);
-    return spanning_tree;
+    return spanning_tree; 
 }
 
 struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex)
@@ -341,7 +341,26 @@ struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex)
 
 struct graph* graph_reverse_direction(struct graph* graph)
 {
+    if (!graph->is_directed)
+    {
+        fprintf(stderr, "graph_reverse_direction: graph is not directed.");
+        return graph;
+    }
 
+    struct graph* reversed_graph = graph_create(true);
+    for (uint64_t i = 0; i < graph->num_vertices; i++)
+    {
+        void* vertex = list_get(graph->vertices_list, i);
+        struct list* vertex_neighbor_weights = graph_get_vertex_edges(graph, vertex);
+        for (uint64_t j = 0; j < vertex_neighbor_weights->count; j++)
+        {
+            struct vertex_weight* neighbor_weight = list_get(vertex_neighbor_weights, j);
+            graph_add_weighted_edge(reversed_graph, neighbor_weight->vertex, vertex, neighbor_weight->weight);
+        }
+    }
+    free(graph);
+    graph = reversed_graph;
+    return graph;
 }
 
 

@@ -171,6 +171,7 @@ void* hashset_get(const struct hashset* hashset, const void* data)
 
 void* hashset_get_random(const struct hashset* hashset)
 {
+    srand(time(NULL));
     if (hashset->count <= 0)
     {
         fprintf(stderr, "hashset_get_random: hashset is empty.\n");
