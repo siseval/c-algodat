@@ -3,7 +3,7 @@
 
 static uint64_t hash_integer(const void* data, const uint64_t mod)
 {
-    uint64_t hash = (((uint64_t)(mod * 0.00003) * ((uint64_t)data)));
+    uint64_t hash = (3197 * (uint64_t)data);
     return hash % mod;
 }
 
@@ -43,7 +43,7 @@ static void hashset_rehash(struct hashset* hashset)
     hashset_clear(hashset);
     for (int i = 0; i < hashset->size; i++)
     {
-        if (data_buf[i] != NULL)         
+        if (data_buf[i] != NULL)
         {
             hashset_put(hashset, data_buf[i]);
         }
@@ -54,15 +54,15 @@ static void hashset_rehash(struct hashset* hashset)
 static void hashset_fill_hole(struct hashset* hashset, uint64_t index)
 {
     uint64_t index_delta = 1;
-    while (hashset->data[index + index_delta % hashset->size] != NULL)
+    while (hashset->data[1 + (index + index_delta) % hashset->size] != NULL)
     {
-        void* data = hashset->data[index + index_delta % hashset->size];
-        uint64_t new_index = hash_data(data, hashset->size, hashset->string_hash); 
+        void* data = hashset->data[1 + (index + index_delta) % hashset->size];
+        uint64_t new_index = hash_data(data, hashset->size, hashset->string_hash);
         if (!(0 < (new_index - index) % hashset->size && (new_index - index) % hashset->size <= index_delta))
         {
-            hashset->data[index] = data;
-            hashset->data[index + index_delta % hashset->size] = NULL;
-            hashset_fill_hole(hashset, new_index);
+            hashset->data[1 + index] = data;
+            hashset->data[1 + (index + index_delta) % hashset->size] = NULL;
+            hashset_fill_hole(hashset, (index + index_delta) % hashset->size);
             return;
         }
         index_delta++;
@@ -141,7 +141,7 @@ void* hashset_remove(struct hashset* hashset, const void* data)
     void* data_buf = hashset->data[1 + index];
     hashset->data[1 + index] = NULL;
     hashset->count--;
-    hashset_fill_hole(hashset, 1 + index);
+    hashset_fill_hole(hashset, index);
     return data_buf;
 }
 

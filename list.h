@@ -24,7 +24,8 @@ void list_append(struct list* list, void* data);
 void list_insert(struct list* list, void* data, const uint64_t index);
 void list_replace(struct list* list, void* data, const uint64_t index);
 
-void* list_remove(struct list* list, const uint64_t index);
+void* list_remove_at(struct list* list, const uint64_t index);
+void* list_remove(struct list* list, void* data);
 void list_clear(struct list* list);
 
 struct list* list_reverse(struct list* list);

@@ -73,12 +73,12 @@ void* heap_pop(struct heap* heap)
     if (heap->count == 1)
     {
         heap->count--;
-        list_remove(heap->list, 0);
+        list_remove_at(heap->list, 0);
         return data_buf;
     }
 
     list_replace(heap->list, list_get(heap->list, heap->count - 1), 0);
-    list_remove(heap->list, heap->count - 1);
+    list_remove_at(heap->list, heap->count - 1);
     heap->count--;
 
     uint64_t i = 0;

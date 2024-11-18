@@ -65,6 +65,56 @@ void graph_add_edge(struct graph* graph, void* from, void* to)
     graph->num_edges++;
 }
 
+
+void graph_remove_vertex(struct graph* graph, void* vertex)
+{
+    struct list* vertex_weights = graph_get_vertex_edges(graph, vertex);
+    for (uint64_t i = 0; i < vertex_weights->count; i++)
+    {
+        struct vertex_weight* vertex_weight = list_get(vertex_weights, i);
+        graph_remove_edge(graph, vertex, vertex_weight->vertex);
+    }
+
+    list_remove(graph->vertices_list, vertex);
+    hashset_remove(graph->vertices, vertex);
+    graph->num_vertices--;
+
+    if (graph->is_directed)
+    {
+        return;
+    }
+
+    for (uint64_t i = 0; i < graph->num_vertices; i++)
+    {
+        void* cur_vertex = list_get(graph->vertices_list, i);
+        struct list* vertex_weights = graph_get_vertex_edges(graph, cur_vertex);
+        for (uint64_t i = 0; i < vertex_weights->count; i++)
+        {
+            struct vertex_weight* vertex_weight = list_get(vertex_weights, i);
+            if (vertex_weight->vertex == vertex)
+            {
+                graph_remove_edge(graph, cur_vertex, vertex);
+            }
+        }
+    }
+}
+
+void graph_remove_edge(struct graph* graph, void* from, void* to)
+{
+    struct vertex_weight* to_weight = graph_get_vertex_edge(graph, from, to);
+    list_remove(graph_get_vertex_edges(graph, from), to_weight);
+    free(to_weight);
+    graph->num_edges--;
+    if (graph->is_directed)
+    {
+        return;
+    }
+    struct vertex_weight* from_weight = graph_get_vertex_edge(graph, to, from);
+    free(from_weight);
+    list_remove(graph_get_vertex_edges(graph, to), from_weight);
+}
+
+
 void graph_add_weighted_edge(struct graph* graph, void* from, void* to, const int64_t weight)
 {
     graph_add_edge(graph, from, to);
@@ -333,9 +383,52 @@ struct graph* graph_min_spanning_tree(const struct graph* graph)
     return spanning_tree; 
 }
 
+struct list* graph_all_reachable_from(const struct graph* graph, void* start)
+{
+    struct list* reachable_vertices = list_create(32);
+    struct hashset* visited = hashset_create(32, false);
+    struct stack* to_visit = stack_create(32);
+
+    stack_push(to_visit, start);
+    while (to_visit->count > 0)
+    {
+        void* cur_vertex = stack_pop(to_visit);
+        list_append(reachable_vertices, cur_vertex);
+
+        struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
+        for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
+        {
+            struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
+            void* neighbor = neighbor_weight->vertex;
+            if (!hashset_contains(visited, neighbor))
+            {
+                stack_push(to_visit, neighbor);
+                hashset_put(visited, neighbor);
+            }
+        }
+    }
+    return reachable_vertices;
+}
+
+
 struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex)
 {
     return hashmap_get(graph->edges, vertex);
+}
+
+struct vertex_weight* graph_get_vertex_edge(const struct graph* graph, void* from, void* to)
+{
+    struct list* vertex_weights = hashmap_get(graph->edges, from);
+    for (uint64_t i = 0; i < vertex_weights->count; i++)
+    {
+        struct vertex_weight* vertex_weight = list_get(vertex_weights, i);
+        if (vertex_weight->vertex == to)
+        {
+            return vertex_weight;
+        }
+    }
+    fprintf(stderr, "graph_get_edge: edge does not exist.");
+    return NULL;
 }
 
 

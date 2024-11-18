@@ -8,6 +8,7 @@
 #include "list.h"
 #include "hashmap.h"
 #include "hashset.h"
+#include "stack.h"
 #include "queue.h"
 #include "heap.h"
 
@@ -39,6 +40,9 @@ void graph_add_edge(struct graph* graph, void* from, void* to);
 void graph_add_weighted_edge(struct graph* graph, void* from, void* to, const int64_t weight);
 void graph_update_weight(struct graph* graph, void* from, void* to, const int64_t weight);
 
+void graph_remove_vertex(struct graph* graph, void* vertex);
+void graph_remove_edge(struct graph* graph, void* from, void* to);
+
 uint64_t graph_get_edge_weight(const struct graph* graph, void* from, void* to);
 
 uint64_t graph_path_weight(const struct graph* graph, const struct list* path);
@@ -46,8 +50,10 @@ uint64_t graph_path_weight(const struct graph* graph, const struct list* path);
 struct list* graph_shortest_path(const struct graph* graph, void* start, void* goal);
 struct list* graph_lightest_path(const struct graph* graph, void* start, void* goal);
 struct graph* graph_min_spanning_tree(const struct graph* graph);
+struct list* graph_all_reachable_from(const struct graph* graph, void* start);
 
 struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex);
+struct vertex_weight* graph_get_vertex_edge(const struct graph* graph, void* from, void* to);
 
 struct graph* graph_reverse_direction(struct graph* graph);
 

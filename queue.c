@@ -33,7 +33,7 @@ void* queue_dequeue(struct queue* queue)
         return NULL;
     }
     queue->count--;
-    return list_remove(queue->list, 0);
+    return list_remove_at(queue->list, 0);
 }
 
 void* queue_peek(struct queue* queue)

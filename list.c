@@ -96,7 +96,7 @@ void list_replace(struct list* list, void* data, const uint64_t index)
 }
 
 
-void* list_remove(struct list* list, const uint64_t index)
+void* list_remove_at(struct list* list, const uint64_t index)
 {
     if (index >= list->count)
     {
@@ -114,6 +114,19 @@ void* list_remove(struct list* list, const uint64_t index)
     list->count--;
 
     return data_buf;
+}
+
+void* list_remove(struct list* list, void* data)
+{
+    for (uint64_t i = 0; i < list->count; i++)
+    {
+        if (list_get(list, i) == data)
+        {
+            return list_remove_at(list, i);
+        }
+    }
+    fprintf(stderr, "list_remove: data not in list.\n");
+    return NULL;
 }
 
 void list_clear(struct list* list)

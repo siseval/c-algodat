@@ -33,7 +33,7 @@ void* stack_pop(struct stack* stack)
         return NULL;
     }
     stack->count--;
-    return list_remove(stack->list, stack->count - 1);
+    return list_remove_at(stack->list, stack->count);
 }
 
 void* stack_peek(struct stack* stack)

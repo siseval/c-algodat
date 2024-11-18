@@ -3,7 +3,7 @@
 
 static uint64_t hash_integer(const void* data, const uint64_t mod)
 {
-    uint64_t hash = (((uint64_t)(mod * 0.00003) * ((uint64_t)data)));
+    uint64_t hash = (3197 * (uint64_t)data);
     return hash % mod;
 }
 
@@ -62,15 +62,15 @@ static void hashmap_rehash(struct hashmap* hashmap)
 static void hashmap_fill_hole(struct hashmap* hashmap, const uint64_t index)
 {
     uint64_t index_delta = 1; 
-    while (hashmap->data[(index + index_delta) % hashmap->size] != NULL)
+    while (hashmap->data[1 + (index + index_delta) % hashmap->size] != NULL)
     {
-        struct key_value* data = hashmap->data[(index + index_delta) % hashmap->size];
+        struct key_value* data = hashmap->data[1 + (index + index_delta) % hashmap->size];
         uint64_t new_index = hash_data(data->key, hashmap->size, hashmap->string_hash);
         if (!(0 < (new_index - index) % hashmap->size && (new_index - index) % hashmap->size <= index_delta))
         {
-            hashmap->data[index] = data;
-            hashmap->data[index + index_delta % hashmap->size] = NULL;
-            hashmap_fill_hole(hashmap, new_index);
+            hashmap->data[1 + index] = data;
+            hashmap->data[1 + (index + index_delta) % hashmap->size] = NULL;
+            hashmap_fill_hole(hashmap, (index + index_delta) % hashmap->size);
             return;
         }
         index_delta++;
@@ -157,7 +157,7 @@ void* hashmap_remove(struct hashmap* hashmap, const void* key)
             free(hashmap->data[1 + index]);
             hashmap->data[1 + index] = NULL;
             hashmap->count--;
-            hashmap_fill_hole(hashmap, 1 + index);
+            hashmap_fill_hole(hashmap, index);
             return value;
         }
         index = (index + 1) % hashmap->size;
