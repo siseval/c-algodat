@@ -40,6 +40,7 @@ void heap_push(struct heap* heap, void* data)
 {
     list_append(heap->list, data);
     heap->count++;
+    heap->size = heap->list->size;
 
     uint64_t i = heap->count - 1;
     while (i > 0)

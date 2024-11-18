@@ -23,6 +23,7 @@ void queue_enqueue(struct queue* queue, void* data)
 {
     list_append(queue->list, data);
     queue->count++;
+    queue->size = queue->list->size;
 }
 
 void* queue_dequeue(struct queue* queue)

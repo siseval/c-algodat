@@ -533,6 +533,33 @@ struct list* graph_separation_vertices(const struct graph* graph)
     return separation_vertices;
 }
 
+
+struct stack* graph_topological_sort(const struct graph* graph)
+{
+    struct stack* sorted_vertices = stack_create(32);
+    struct hashset* visited = hashset_create(32, false);
+    struct stack* to_visit = stack_create(32);
+
+    while (to_visit->count > 0)
+    {
+        void* cur_vertex = stack_pop(to_visit);
+        hashset_put(visited, cur_vertex);
+
+        struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
+        for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
+        {
+            struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
+            void* neighbor = neighbor_weight->vertex;
+            if (!hashset_contains(visited, neighbor))
+            {
+                stack_push(to_visit, neighbor);
+            }
+        }
+        stack_push(sorted_vertices, cur_vertex);
+    }
+    return sorted_vertices;
+}
+
 bool graph_is_biconnected(const struct graph* graph)
 {
     struct list* separation_vertices = graph_separation_vertices(graph);
@@ -581,8 +608,8 @@ struct graph* graph_reverse_direction(struct graph* graph)
             graph_add_weighted_edge(reversed_graph, neighbor_weight->vertex, vertex, neighbor_weight->weight);
         }
     }
-    free(graph);
-    graph = reversed_graph;
+    *graph = *reversed_graph;
+    free(reversed_graph);
     return graph;
 }
 

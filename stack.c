@@ -23,6 +23,7 @@ void stack_push(struct stack* stack, void* data)
 {
     list_append(stack->list, data);
     stack->count++;
+    stack->size = stack->list->size;
 }
 
 void* stack_pop(struct stack* stack)
