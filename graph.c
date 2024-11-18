@@ -177,16 +177,16 @@ uint64_t graph_get_edge_weight(const struct graph* graph, void* from, void* to)
 }
 
 
-static struct list* path_from_parent_map(struct hashmap* parent_map, void* start, void* goal)
+static struct list* path_from_parent_map(struct hashmap* parent_map, void* start_vertex, void* goal_vertex)
 {
     struct list* path_list = list_create(32);
-    void* cur_vertex = goal;
-    while (cur_vertex != start)
+    void* cur_vertex = goal_vertex;
+    while (cur_vertex != start_vertex)
     {
         list_append(path_list, cur_vertex);
         cur_vertex = hashmap_get(parent_map, cur_vertex);
     }
-    list_append(path_list, start);
+    list_append(path_list, start_vertex);
     return list_reverse(path_list);
 }
 
@@ -203,14 +203,14 @@ uint64_t graph_path_weight(const struct graph* graph, const struct list* path)
 }
 
 
-struct list* graph_shortest_path(const struct graph* graph, void* start, void* goal)
+struct list* graph_shortest_path(const struct graph* graph, void* start_vertex, void* goal_vertex)
 {
     struct hashset* visited = hashset_create(32, false);
     struct hashmap* parents = hashmap_create(32, false);
     struct queue* to_visit = queue_create(32);
 
-    queue_enqueue(to_visit, start);
-    bool goal_found = false;
+    queue_enqueue(to_visit, start_vertex);
+    bool goal_vertex_found = false;
     while (to_visit->count > 0)
     {
         void* cur_vertex = queue_dequeue(to_visit);
@@ -226,13 +226,13 @@ struct list* graph_shortest_path(const struct graph* graph, void* start, void* g
                 queue_enqueue(to_visit, neighbor);
                 hashset_put(visited, neighbor);
             }
-            if (neighbor == goal)
+            if (neighbor == goal_vertex)
             {
-                goal_found = true;
+                goal_vertex_found = true;
                 break;
             }
         }
-        if (goal_found)
+        if (goal_vertex_found)
         {
             break;
         }
@@ -240,13 +240,13 @@ struct list* graph_shortest_path(const struct graph* graph, void* start, void* g
 
     struct list* path_list = NULL;
 
-    if (!goal_found)
+    if (!goal_vertex_found)
     {
         fprintf(stderr, "graph_shortest_path: path not found.\n");
     }
     else
     {
-        path_list = path_from_parent_map(parents, start, goal);
+        path_list = path_from_parent_map(parents, start_vertex, goal_vertex);
     }
 
     hashset_destroy(visited);
@@ -255,7 +255,7 @@ struct list* graph_shortest_path(const struct graph* graph, void* start, void* g
     return path_list;
 }
 
-struct list* graph_lightest_path(const struct graph* graph, void* start, void* goal)
+struct list* graph_lightest_path(const struct graph* graph, void* start_vertex, void* goal_vertex)
 {
     struct hashmap* parents = hashmap_create(32, false);
     struct heap* to_visit = heap_create(32, true);
@@ -265,22 +265,22 @@ struct list* graph_lightest_path(const struct graph* graph, void* start, void* g
     {
         hashmap_put(distances, list_get(graph->vertices_list, i), (uint64_t*)INT_MAX);
     }
-    hashmap_put(distances, start, (uint64_t*)0);
+    hashmap_put(distances, start_vertex, (uint64_t*)0);
 
-    void** distance_start = malloc(sizeof(void*) * 2);
-    distance_start[0] = (uint64_t*)0;
-    distance_start[1] = start;
-    heap_push(to_visit, distance_start);
-    bool goal_found = false;
+    void** distance_start_vertex = malloc(sizeof(void*) * 2);
+    distance_start_vertex[0] = (uint64_t*)0;
+    distance_start_vertex[1] = start_vertex;
+    heap_push(to_visit, distance_start_vertex);
+    bool goal_vertex_found = false;
 
     while (to_visit->count > 0)
     {
         void** distance_vertex = heap_pop(to_visit);
         void* cur_vertex = distance_vertex[1];
         free(distance_vertex);
-        if (cur_vertex == goal)
+        if (cur_vertex == goal_vertex)
         {
-            goal_found = true;
+            goal_vertex_found = true;
             break;
         }
         uint64_t cur_distance = (uint64_t)hashmap_get(distances, cur_vertex);
@@ -305,7 +305,7 @@ struct list* graph_lightest_path(const struct graph* graph, void* start, void* g
             distance_neighbor[1] = neighbor;
             heap_push(to_visit, distance_neighbor);
         }
-        if (goal_found)
+        if (goal_vertex_found)
         {
             break;
         }
@@ -317,13 +317,13 @@ struct list* graph_lightest_path(const struct graph* graph, void* start, void* g
     }
 
     struct list* path_list = NULL;
-    if (!goal_found)
+    if (!goal_vertex_found)
     {
         fprintf(stderr, "graph_lightest_path: path not found.\n");
     }
     else
     {
-        path_list = path_from_parent_map(parents, start, goal);;
+        path_list = path_from_parent_map(parents, start_vertex, goal_vertex);;
     }
 
     hashmap_destroy(parents);
@@ -337,13 +337,13 @@ struct graph* graph_min_spanning_tree(const struct graph* graph)
     struct graph* spanning_tree = graph_create(true);
     struct heap* to_visit = heap_create(32, true);
 
-    void** distance_start_null = malloc(sizeof(void*) * 3);
-    void* start = hashset_get_random(graph->vertices);
-    distance_start_null[0] = (uint64_t*)0;
-    distance_start_null[1] = start;
-    distance_start_null[2] = NULL;
+    void** distance_start_vertex_null = malloc(sizeof(void*) * 3);
+    void* start_vertex = hashset_get_random(graph->vertices);
+    distance_start_vertex_null[0] = (uint64_t*)0;
+    distance_start_vertex_null[1] = start_vertex;
+    distance_start_vertex_null[2] = NULL;
 
-    heap_push(to_visit, distance_start_null);
+    heap_push(to_visit, distance_start_vertex_null);
 
     while (to_visit->count > 0)
     {
@@ -357,9 +357,9 @@ struct graph* graph_min_spanning_tree(const struct graph* graph)
         {
             continue;
         }
-        if (cur_vertex != start)
+        if (cur_vertex != start_vertex)
         {
-            graph_add_weighted_edge(spanning_tree, cur_vertex, parent, weight);
+            graph_add_weighted_edge(spanning_tree, parent, cur_vertex, weight);
         }
 
         struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
@@ -367,7 +367,7 @@ struct graph* graph_min_spanning_tree(const struct graph* graph)
         for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
         {
             struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
-            if (neighbor_weight->vertex == start)
+            if (neighbor_weight->vertex == start_vertex)
             {
                 continue;
             }
@@ -383,13 +383,47 @@ struct graph* graph_min_spanning_tree(const struct graph* graph)
     return spanning_tree; 
 }
 
-struct list* graph_all_reachable_from(const struct graph* graph, void* start)
+struct graph* graph_spanning_tree(const struct graph* graph)
+{
+    struct hashset* visited = hashset_create(32, false);
+    struct stack* to_visit = stack_create(32);
+    struct graph* spanning_tree = graph_create(true);
+    void* start_vertex = hashset_get_random(graph->vertices);
+
+    stack_push(to_visit, start_vertex);
+    while (to_visit->count > 0)
+    {
+        void* cur_vertex = stack_pop(to_visit);
+
+        struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
+        for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
+        {
+            struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
+            void* neighbor = neighbor_weight->vertex;
+
+            if (!hashset_contains(visited, neighbor))
+            {
+                stack_push(to_visit, neighbor);
+                hashset_put(visited, neighbor);
+                graph_add_edge(spanning_tree, cur_vertex, neighbor);
+            }
+        }
+    }
+    return spanning_tree;
+}
+
+struct list* graph_all_reachable_from(const struct graph* graph, void* start_vertex)
 {
     struct list* reachable_vertices = list_create(32);
+    if (!hashset_contains(graph->vertices, start_vertex))
+    {
+        fprintf(stderr, "graph_all_reachable_from: start_vertex vertex is not in graph.");
+        return reachable_vertices;
+    }
     struct hashset* visited = hashset_create(32, false);
     struct stack* to_visit = stack_create(32);
 
-    stack_push(to_visit, start);
+    stack_push(to_visit, start_vertex);
     while (to_visit->count > 0)
     {
         void* cur_vertex = stack_pop(to_visit);
@@ -408,6 +442,26 @@ struct list* graph_all_reachable_from(const struct graph* graph, void* start)
         }
     }
     return reachable_vertices;
+}
+
+
+struct hashset* graph_separation_vertices(const struct graph* graph)
+{
+    struct hashset* seperation_vertices = hashset_create(32, false);
+    struct graph* spanning_tree = graph_spanning_tree(graph);
+    struct hashmap* vertex_depths = hashmap_create(32, false);
+    struct hashmap* vertex_lows = hashmap_create(32, false);
+    struct hashmap* vertex_parents = hashmap_create(32, false);
+    struct stack* to_visit = stack_create(32);
+
+    void* start_vertex = hashset_get_random(graph->vertices);
+
+    graph_destroy(spanning_tree);
+    hashmap_destroy(vertex_depths);
+    hashmap_destroy(vertex_lows);
+    hashmap_destroy(vertex_parents);
+    stack_destroy(to_visit);
+    return seperation_vertices;
 }
 
 
