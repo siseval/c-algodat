@@ -444,26 +444,102 @@ struct list* graph_all_reachable_from(const struct graph* graph, void* start_ver
     return reachable_vertices;
 }
 
-
-struct hashset* graph_separation_vertices(const struct graph* graph)
+static void separation_vertices_recursive(const struct graph* graph, void* parent, const uint64_t cur_depth, struct hashmap* vertex_depths, struct hashmap* vertex_lows, struct hashmap* vertex_parents, struct list* separation_vertices)
 {
-    struct hashset* seperation_vertices = hashset_create(32, false);
-    struct graph* spanning_tree = graph_spanning_tree(graph);
+    hashmap_put(vertex_depths, parent, (uint64_t*)cur_depth);
+    hashmap_put(vertex_lows, parent, (uint64_t*)cur_depth);
+
+    struct list* parent_child_weights = graph_get_vertex_edges(graph, parent);
+    for (uint64_t i = 0; i < parent_child_weights->count; i++)
+    {
+        struct vertex_weight* child_weight = list_get(parent_child_weights, i);
+        void* child = child_weight->vertex;
+        if (hashmap_has_key(vertex_parents, child) && hashmap_get(vertex_parents, child) == parent)
+        {
+            continue;
+        }
+        if (hashmap_has_key(vertex_depths, child))
+        {
+            uint64_t child_depth = (uint64_t)hashmap_get(vertex_depths, child);
+            uint64_t parent_low = (uint64_t)hashmap_get(vertex_lows, parent);
+            uint64_t depth_low_min = child_depth < parent_low ? child_depth : parent_low;
+            hashmap_put(vertex_lows, parent, (uint64_t*)depth_low_min);
+            continue;
+        }
+
+        hashmap_put(vertex_parents, child, parent);
+        separation_vertices_recursive(graph, child, cur_depth + 1, vertex_depths, vertex_lows, vertex_parents, separation_vertices);
+
+        uint64_t child_low = (uint64_t)hashmap_get(vertex_lows, child);
+        uint64_t parent_low = (uint64_t)hashmap_get(vertex_lows, parent);
+        uint64_t low_min = child_low < parent_low ? child_low : parent_low;
+        hashmap_put(vertex_lows, parent, (uint64_t*)low_min);
+
+        if (cur_depth <= (uint64_t)hashmap_get(vertex_lows, child))
+        {
+            list_append(separation_vertices, parent);
+        }
+    }
+}
+
+struct list* graph_separation_vertices(const struct graph* graph)
+{
+    struct list* separation_vertices = list_create(32);
     struct hashmap* vertex_depths = hashmap_create(32, false);
     struct hashmap* vertex_lows = hashmap_create(32, false);
     struct hashmap* vertex_parents = hashmap_create(32, false);
-    struct stack* to_visit = stack_create(32);
 
     void* start_vertex = hashset_get_random(graph->vertices);
+    hashmap_put(vertex_depths, start_vertex, (uint64_t*)0);
+    hashmap_put(vertex_lows, start_vertex, (uint64_t*)0);
 
-    graph_destroy(spanning_tree);
+    struct list* start_child_weights = graph_get_vertex_edges(graph, start_vertex);
+    for (uint64_t i = 0; i < start_child_weights->count; i++)
+    {
+        struct vertex_weight* child_weight = list_get(start_child_weights, i);
+        void* child = child_weight->vertex;
+
+        if (!hashmap_has_key(vertex_depths, child))
+        {
+            hashmap_put(vertex_parents, child, start_vertex);
+            separation_vertices_recursive(graph, child, 1, vertex_depths, vertex_lows, vertex_parents, separation_vertices);
+        }
+    }
+
+    uint64_t unvisited_start_neighbors = 0;
+    for (uint64_t i = 0; i < start_child_weights->count; i++)
+    {
+        struct vertex_weight* neighbor_weight = list_get(start_child_weights, i);
+        void* neighbor = neighbor_weight->vertex;
+
+        if ((uint64_t)hashmap_get(vertex_depths, neighbor) == 1)
+        {
+            unvisited_start_neighbors++;
+        }
+        if (unvisited_start_neighbors > 1)
+        {
+            break;
+        }
+    }
+    if (unvisited_start_neighbors > 1)
+    {
+        list_append(separation_vertices, start_vertex);
+    }
+
     hashmap_destroy(vertex_depths);
     hashmap_destroy(vertex_lows);
     hashmap_destroy(vertex_parents);
-    stack_destroy(to_visit);
-    return seperation_vertices;
+
+    return separation_vertices;
 }
 
+bool graph_is_biconnected(const struct graph* graph)
+{
+    struct list* separation_vertices = graph_separation_vertices(graph);
+    bool is_biconnected = separation_vertices->count <= 0;
+    list_destroy(separation_vertices);
+    return is_biconnected;
+}
 
 struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex)
 {

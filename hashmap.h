@@ -20,7 +20,7 @@ struct hashmap
     uint64_t size;
     uint64_t data_size;
     bool string_hash;
-    int count;
+    uint64_t count;
     struct key_value** data;
 };
 
