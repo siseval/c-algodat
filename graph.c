@@ -75,15 +75,6 @@ void graph_remove_vertex(struct graph* graph, void* vertex)
         graph_remove_edge(graph, vertex, vertex_weight->vertex);
     }
 
-    list_remove(graph->vertices_list, vertex);
-    hashset_remove(graph->vertices, vertex);
-    graph->num_vertices--;
-
-    if (graph->is_directed)
-    {
-        return;
-    }
-
     for (uint64_t i = 0; i < graph->num_vertices; i++)
     {
         void* cur_vertex = list_get(graph->vertices_list, i);
@@ -97,6 +88,10 @@ void graph_remove_vertex(struct graph* graph, void* vertex)
             }
         }
     }
+
+    list_remove(graph->vertices_list, vertex);
+    hashset_remove(graph->vertices, vertex);
+    graph->num_vertices--;
 }
 
 void graph_remove_edge(struct graph* graph, void* from, void* to)
@@ -441,6 +436,8 @@ struct list* graph_all_reachable_from(const struct graph* graph, void* start_ver
             }
         }
     }
+    hashset_destroy(visited);
+    stack_destroy(to_visit);
     return reachable_vertices;
 }
 
@@ -533,32 +530,43 @@ struct list* graph_separation_vertices(const struct graph* graph)
     return separation_vertices;
 }
 
+static void topological_sort_recursive(const struct graph* graph, void* cur_vertex, struct hashset* visited, struct stack* sorted_vertices)
+{
+    hashset_put(visited, cur_vertex);
+
+    struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
+    for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
+    {
+        struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
+        void* neighbor = neighbor_weight->vertex;
+
+        if (!hashset_contains(visited, neighbor))
+        {
+            topological_sort_recursive(graph, neighbor, visited, sorted_vertices);
+        }
+    }
+    stack_push(sorted_vertices, cur_vertex);
+}
 
 struct stack* graph_topological_sort(const struct graph* graph)
 {
     struct stack* sorted_vertices = stack_create(32);
     struct hashset* visited = hashset_create(32, false);
-    struct stack* to_visit = stack_create(32);
 
-    while (to_visit->count > 0)
+    for (uint64_t i = 0; i < graph->num_vertices; i++)
     {
-        void* cur_vertex = stack_pop(to_visit);
-        hashset_put(visited, cur_vertex);
-
-        struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
-        for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
+        void* cur_vertex = list_get(graph->vertices_list, i);
+        if (!hashset_contains(visited, cur_vertex)) 
         {
-            struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
-            void* neighbor = neighbor_weight->vertex;
-            if (!hashset_contains(visited, neighbor))
-            {
-                stack_push(to_visit, neighbor);
-            }
+            topological_sort_recursive(graph, cur_vertex, visited, sorted_vertices);
         }
-        stack_push(sorted_vertices, cur_vertex);
     }
+    hashset_destroy(visited);
     return sorted_vertices;
 }
+
+struct list* graph_strongly_connected_components(const struct graph* graph);
+
 
 bool graph_is_biconnected(const struct graph* graph)
 {
@@ -589,14 +597,8 @@ struct vertex_weight* graph_get_vertex_edge(const struct graph* graph, void* fro
 }
 
 
-struct graph* graph_reverse_direction(struct graph* graph)
+struct graph* graph_get_reverse(struct graph* graph)
 {
-    if (!graph->is_directed)
-    {
-        fprintf(stderr, "graph_reverse_direction: graph is not directed.");
-        return graph;
-    }
-
     struct graph* reversed_graph = graph_create(true);
     for (uint64_t i = 0; i < graph->num_vertices; i++)
     {
@@ -608,6 +610,12 @@ struct graph* graph_reverse_direction(struct graph* graph)
             graph_add_weighted_edge(reversed_graph, neighbor_weight->vertex, vertex, neighbor_weight->weight);
         }
     }
+    return reversed_graph;
+}
+
+struct graph* graph_reverse_direction(struct graph* graph)
+{
+    struct graph* reversed_graph = graph_get_reverse(graph);
     *graph = *reversed_graph;
     free(reversed_graph);
     return graph;

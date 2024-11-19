@@ -61,6 +61,7 @@ struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex);
 struct vertex_weight* graph_get_vertex_edge(const struct graph* graph, void* from, void* to);
 
 struct graph* graph_reverse_direction(struct graph* graph);
+struct graph* graph_get_reverse(struct graph* graph);
 
 void graph_print_vertex_neighbors_char(const struct graph* graph, void* vertex);
 void graph_print_vertex_neighbors_int(const struct graph* graph, void* vertex);
