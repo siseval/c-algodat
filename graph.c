@@ -171,6 +171,23 @@ uint64_t graph_get_edge_weight(const struct graph* graph, void* from, void* to)
     return vertex_weight->weight;
 }
 
+bool graph_has_edge(const struct graph* graph, void* from, void* to)
+{
+    if (!hashset_contains(graph->vertices, from))
+    {
+        return false;
+    }
+    struct list* vertex_weights = graph_get_vertex_edges(graph, from);
+    for (uint64_t i = 0; i < vertex_weights->count; i++)
+    {
+        struct vertex_weight* vertex_weight = list_get(vertex_weights, i);
+        if (vertex_weight->vertex == to)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 
 static struct list* path_from_parent_map(struct hashmap* parent_map, void* start_vertex, void* goal_vertex)
 {
@@ -318,7 +335,7 @@ struct list* graph_lightest_path(const struct graph* graph, void* start_vertex, 
     }
     else
     {
-        path_list = path_from_parent_map(parents, start_vertex, goal_vertex);;
+        path_list = path_from_parent_map(parents, start_vertex, goal_vertex);
     }
 
     hashmap_destroy(parents);
@@ -400,7 +417,10 @@ struct graph* graph_spanning_tree(const struct graph* graph)
             {
                 stack_push(to_visit, neighbor);
                 hashset_put(visited, neighbor);
-                graph_add_edge(spanning_tree, cur_vertex, neighbor);
+                if (!graph_has_edge(spanning_tree, neighbor, cur_vertex))
+                {
+                    graph_add_edge(spanning_tree, cur_vertex, neighbor);
+                }
             }
         }
     }
@@ -615,6 +635,53 @@ bool graph_is_biconnected(const struct graph* graph)
     list_destroy(separation_vertices);
     return is_biconnected;
 }
+
+
+bool is_cyclical_recursive(const struct graph* graph, void* cur_vertex, void* parent_vertex, struct hashset* visited, struct hashset* cur_recursion_stack)
+{
+    hashset_put(visited, cur_vertex);
+    hashset_put(cur_recursion_stack, cur_vertex);
+
+    struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
+    for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
+    {
+        struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
+        void* neighbor = neighbor_weight->vertex;
+
+        if (!hashset_contains(visited, neighbor) && is_cyclical_recursive(graph, neighbor, cur_vertex, visited, cur_recursion_stack))
+        {
+            return true;
+        }
+        else if (hashset_contains(cur_recursion_stack, neighbor) && !(!graph->is_directed && neighbor == parent_vertex))
+        {
+            return true;
+        }
+    }
+    hashset_remove(cur_recursion_stack, cur_vertex);
+    return false;
+}
+
+bool graph_is_cyclical(const struct graph* graph)
+{
+    struct hashset* visited = hashset_create(32, false);
+    struct hashset* cur_recursion_stack = hashset_create(32, false);
+    bool is_cyclical = false;
+
+    for (uint64_t i = 0; i < graph->num_vertices; i++)
+    {
+        void* cur_vertex = list_get(graph->vertices_list, i);
+        if (!hashset_contains(visited, cur_vertex) && is_cyclical_recursive(graph, cur_vertex, NULL, visited, cur_recursion_stack))
+        {
+            is_cyclical = true;
+            break;
+        }
+    }
+
+    hashset_destroy(visited);
+    hashset_destroy(cur_recursion_stack);
+    return is_cyclical;
+}
+
 
 struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex)
 {

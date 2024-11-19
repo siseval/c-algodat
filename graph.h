@@ -57,9 +57,11 @@ struct stack* graph_topological_sort(const struct graph* graph);
 struct list* graph_strongly_connected_components(const struct graph* graph);
 
 bool graph_is_biconnected(const struct graph* graph);
+bool graph_is_cyclical(const struct graph* graph);
 
 struct list* graph_get_vertex_edges(const struct graph* graph, void* vertex);
 struct vertex_weight* graph_get_vertex_edge(const struct graph* graph, void* from, void* to);
+bool graph_has_edge(const struct graph* graph, void* from, void* to);
 
 struct graph* graph_get_reverse(const struct graph* graph);
 struct graph* graph_reverse_direction(struct graph* graph);
