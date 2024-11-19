@@ -565,7 +565,47 @@ struct stack* graph_topological_sort(const struct graph* graph)
     return sorted_vertices;
 }
 
-struct list* graph_strongly_connected_components(const struct graph* graph);
+static void strongly_connected_components_recursive(const struct graph* graph, void* cur_vertex, struct hashset* visited, struct list* component)
+{
+    hashset_put(visited, cur_vertex);
+
+    struct list* cur_vertex_neighbors = graph_get_vertex_edges(graph, cur_vertex);
+    for (uint64_t i = 0; i < cur_vertex_neighbors->count; i++)
+    {
+        struct vertex_weight* neighbor_weight = list_get(cur_vertex_neighbors, i);
+        void* neighbor = neighbor_weight->vertex;
+
+        if (!hashset_contains(visited, neighbor))
+        {
+            strongly_connected_components_recursive(graph, neighbor, visited, component);
+        }
+    }
+    list_append(component, cur_vertex);
+}
+
+struct list* graph_strongly_connected_components(const struct graph* graph)
+{
+    struct list* components = list_create(32);
+    struct hashset* visited = hashset_create(32, false);
+
+    struct stack* topological_sort = graph_topological_sort(graph);
+    struct graph* reversed_graph = graph_get_reverse(graph);
+    for (uint64_t i = 0; i < graph->num_vertices; i++)
+    {
+        void* cur_vertex = stack_pop(topological_sort);
+        if (!hashset_contains(visited, cur_vertex))
+        {
+            struct list* component = list_create(32);
+            strongly_connected_components_recursive(reversed_graph, cur_vertex, visited, component);
+            list_append(components, component);
+        }
+    }
+
+    hashset_destroy(visited);
+    stack_destroy(topological_sort);
+    graph_destroy(reversed_graph);
+    return components;
+}
 
 
 bool graph_is_biconnected(const struct graph* graph)
@@ -597,7 +637,7 @@ struct vertex_weight* graph_get_vertex_edge(const struct graph* graph, void* fro
 }
 
 
-struct graph* graph_get_reverse(struct graph* graph)
+struct graph* graph_get_reverse(const struct graph* graph)
 {
     struct graph* reversed_graph = graph_create(true);
     for (uint64_t i = 0; i < graph->num_vertices; i++)
