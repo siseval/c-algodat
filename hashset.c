@@ -22,6 +22,7 @@ static uint64_t hash_data(const void* data, const uint64_t mod, bool string_hash
     return string_hash ? hash_string(data, mod) : hash_integer(data, mod); 
 }
 
+
 static bool hashset_realloc(struct hashset* hashset, uint64_t size)
 {
     void** tmp = realloc(hashset->data, size);

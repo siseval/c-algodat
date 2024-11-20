@@ -135,6 +135,19 @@ void list_clear(struct list* list)
 }
 
 
+struct list *list_swap(struct list* list, const uint64_t index_a, const uint64_t index_b)
+{
+    if (index_a < 0 || index_a >= list->count || index_b < 0 || index_b >= list->count)
+    {
+        fprintf(stderr, "list_swap: index out of bounds\n");
+        return NULL;
+    }
+    void* data_buf = list->data[1 + index_a];
+    list->data[1 + index_a] = list->data[1 + index_b];
+    list->data[1 + index_b] = data_buf;
+    return list;
+}
+
 struct list* list_reverse(struct list* list)
 {
     uint64_t left_index = 0;
