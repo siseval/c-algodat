@@ -189,6 +189,82 @@ bool list_contains(const struct list* list, const void* data)
 }
 
 
+bool list_is_sorted(struct list* list)
+{
+    for (uint64_t i = 0; i < list->count - 1; i++)
+    {
+        if ((uint64_t)list_get(list, i) > (uint64_t)list_get(list, i + 1))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+struct list* list_bubble_sort(struct list* list)
+{
+    for (uint64_t i = 0; i < list->count - 1; i++)
+    {
+        bool is_sorted = true;
+        for (uint64_t j = 0; j < list->count - i - 1; j++)
+        {
+            if (list_get(list, j) > list_get(list, j + 1))
+            {
+                is_sorted = false;
+                list_swap(list, j, j + 1);
+            }
+        }
+        if (is_sorted)
+        {
+            break;
+        }
+    }
+    return list;
+}
+
+struct list* list_selection_sort(struct list* list)
+{
+    for (uint64_t i = 0; i < list->count; i++)
+    {
+        void* min = (void*)INT_MAX;
+        uint64_t min_index = 0;
+
+        for (uint64_t j = i; j < list->count; j++)
+        {
+            void* cur_element = list_get(list, j);
+            if (cur_element < min)
+            {
+                min = cur_element;
+                min_index = j;
+            }
+        }
+        list_swap(list, i, min_index);
+    }
+    return list;
+}
+
+struct list* list_insertion_sort(struct list* list)
+{
+    for (uint64_t i = 1; i < list->count; i++)
+    {
+        for (uint64_t j = i; j > 0; j--)
+        {
+            if (list_get(list, j - 1) > list_get(list, j))
+            {
+                list_swap(list, j - 1, j);
+            }
+        }
+    }
+    return list;
+}
+
+struct list* list_heap_sort(struct list* list)
+{
+    return list;
+}
+
+
 void list_print_int(const struct list* list)
 {
     printf("(");
