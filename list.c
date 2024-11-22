@@ -253,10 +253,10 @@ struct list* list_selection_sort(struct list* list)
 
         for (uint64_t j = i; j < list->count; j++)
         {
-            void* cur_element = list_get(list, j);
-            if (cur_element < min)
+            void* cur_data = list_get(list, j);
+            if (cur_data < min)
             {
-                min = cur_element;
+                min = cur_data;
                 min_index = j;
             }
         }
@@ -321,7 +321,7 @@ struct list* list_heap_sort(struct list* list)
     return list; 
 }
 
-static struct list* merge_recursive(struct list* sublist_a, struct list* sublist_b)
+static struct list* merge_sort_merge(struct list* sublist_a, struct list* sublist_b)
 {
     struct list* sorted_list = list_create(32);
     uint64_t index_a = 0;
@@ -372,7 +372,7 @@ static struct list* merge_sort_recursive(struct list* list)
     list_merge_sort(sublist_b);
     free(list);
 
-    return merge_recursive(sublist_a, sublist_b);
+    return merge_sort_merge(sublist_a, sublist_b);
 }
 
 struct list* list_merge_sort(struct list* list)
@@ -382,6 +382,54 @@ struct list* list_merge_sort(struct list* list)
     *list = *list_copy;
     free(list_copy);
     return list;
+}
+
+static uint64_t quick_sort_partition(struct list* list, const uint64_t low_index, const uint64_t high_index)
+{
+    uint64_t pivot_index = low_index + rand() % (high_index - low_index);
+    void* pivot_data = list_get(list, pivot_index);
+    list_swap(list, high_index, pivot_index);
+
+    uint64_t left_index = low_index;
+    uint64_t right_index = high_index - 1;
+
+    while (left_index <= right_index)
+    {
+        while (left_index <= right_index && list_get(list, left_index) <= pivot_data)
+        {
+            left_index++;
+        }
+        while (right_index >= left_index && list_get(list, right_index) >= pivot_data)
+        {
+            right_index--;
+        }
+        if (left_index < right_index)
+        {
+            list_swap(list, left_index, right_index);
+        }
+    }
+
+    list_swap(list, left_index, high_index);
+    return left_index;
+}
+
+static struct list* quick_sort_recursive(struct list* list, const uint64_t low_index, const uint64_t high_index)
+{
+    if (low_index >= high_index)
+    {
+        return list;
+    }
+    uint64_t pivot_index = quick_sort_partition(list, low_index, high_index);
+
+    quick_sort_recursive(list, low_index, pivot_index - 1);
+    quick_sort_recursive(list, pivot_index + 1, high_index);
+
+    return list;
+}
+
+struct list* list_quick_sort(struct list* list)
+{
+    return quick_sort_recursive(list, 0, list->count - 1);
 }
 
 

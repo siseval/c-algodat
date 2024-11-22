@@ -45,6 +45,7 @@ struct list* list_selection_sort(struct list* list);
 struct list* list_insertion_sort(struct list* list);
 struct list* list_heap_sort(struct list* list);
 struct list* list_merge_sort(struct list* list);
+struct list* list_quick_sort(struct list* list);
 
 void list_print_int(const struct list* list);
 void list_print_char(const struct list* list);
