@@ -39,6 +39,16 @@ struct list* list_create(const uint64_t size)
     return list;
 }
 
+struct list* list_create_copy(const struct list* list)
+{
+    struct list* list_copy = list_create(32);
+    for (uint64_t i = 0; i < list->count; i++)
+    {
+        list_append(list_copy, list_get(list, i));
+    }
+    return list_copy;
+}
+
 void list_destroy(struct list* list)
 {
     free(list->data);
@@ -135,19 +145,6 @@ void list_clear(struct list* list)
 }
 
 
-struct list *list_swap(struct list* list, const uint64_t index_a, const uint64_t index_b)
-{
-    if (index_a < 0 || index_a >= list->count || index_b < 0 || index_b >= list->count)
-    {
-        fprintf(stderr, "list_swap: index out of bounds\n");
-        return NULL;
-    }
-    void* data_buf = list->data[1 + index_a];
-    list->data[1 + index_a] = list->data[1 + index_b];
-    list->data[1 + index_b] = data_buf;
-    return list;
-}
-
 struct list* list_reverse(struct list* list)
 {
     uint64_t left_index = 0;
@@ -163,6 +160,30 @@ struct list* list_reverse(struct list* list)
         right_index--;
     }
     return list;
+}
+
+struct list *list_swap(struct list* list, const uint64_t index_a, const uint64_t index_b)
+{
+    if (index_a < 0 || index_a >= list->count || index_b < 0 || index_b >= list->count)
+    {
+        fprintf(stderr, "list_swap: index out of bounds: a: %lld, b: %lld\n", index_a, index_b);
+        return NULL;
+    }
+    void* data_buf = list->data[1 + index_a];
+    list->data[1 + index_a] = list->data[1 + index_b];
+    list->data[1 + index_b] = data_buf;
+    return list;
+}
+
+
+struct list* list_get_sublist(const struct list* list, const uint64_t from_index, const uint64_t to_index)
+{
+    struct list* sublist = list_create(32);
+    for (uint64_t i = from_index; i < to_index; i++)
+    {
+        list_append(sublist, list_get(list, i));
+    }
+    return sublist;
 }
 
 
@@ -261,6 +282,105 @@ struct list* list_insertion_sort(struct list* list)
 
 struct list* list_heap_sort(struct list* list)
 {
+    for (uint64_t i = 1; i < list->count; i++)
+    {
+        uint64_t index = i;
+        uint64_t parent_index = (index - 1) / 2;
+
+        while (index > 0 && list_get(list, index) > list_get(list, parent_index))
+        {
+            list_swap(list, index, parent_index);
+            index = parent_index;
+            parent_index = (index - 1) / 2;
+        }
+    }
+    for (uint64_t i = list->count - 1; i > 0; i--)
+    {
+        list_swap(list, 0, i);
+        uint64_t index = 0;
+
+        while (index * 2 + 1 < i)
+        {
+            uint64_t left_index = index * 2 + 1;
+            uint64_t right_index = index * 2 + 2;
+            void* left_data = list_get(list, left_index);
+            void* right_data = list_get(list, right_index);
+            
+            uint64_t candidate_index = right_index >= i || left_data >= right_data ? left_index : right_index;
+            if (list_get(list, index) < list_get(list, candidate_index))
+            {
+                list_swap(list, index, candidate_index);
+                index = candidate_index;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+    return list; 
+}
+
+static struct list* merge_recursive(struct list* sublist_a, struct list* sublist_b)
+{
+    struct list* sorted_list = list_create(32);
+    uint64_t index_a = 0;
+    uint64_t index_b = 0;
+
+    while (index_a < sublist_a->count && index_b < sublist_b->count)
+    {
+        void* data_a = list_get(sublist_a, index_a);
+        void* data_b = list_get(sublist_b, index_b);
+        if (data_a <= data_b)
+        {
+            list_append(sorted_list, data_a);
+            index_a++;
+        }
+        else
+        {
+            list_append(sorted_list, data_b);
+            index_b++;
+        }
+    }
+    while (index_a < sublist_a->count)
+    {
+        list_append(sorted_list, list_get(sublist_a, index_a));
+        index_a++;
+    }
+    while (index_b < sublist_b->count)
+    {
+        list_append(sorted_list, list_get(sublist_b, index_b));
+        index_b++;
+    }
+
+    list_destroy(sublist_a);
+    list_destroy(sublist_b);
+    return sorted_list;
+}
+
+static struct list* merge_sort_recursive(struct list* list)
+{
+    if (list->count <= 1)
+    {
+        return list;
+    }
+    uint64_t middle_index = list->count / 2;
+
+    struct list* sublist_a = list_get_sublist(list, 0, middle_index);
+    struct list* sublist_b = list_get_sublist(list, middle_index, list->count);
+    list_merge_sort(sublist_a);
+    list_merge_sort(sublist_b);
+    free(list);
+
+    return merge_recursive(sublist_a, sublist_b);
+}
+
+struct list* list_merge_sort(struct list* list)
+{
+    struct list* list_copy = list_create_copy(list);
+    list_copy = merge_sort_recursive(list_copy);
+    *list = *list_copy;
+    free(list_copy);
     return list;
 }
 

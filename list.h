@@ -19,6 +19,7 @@ struct list
 };
 
 struct list* list_create(const uint64_t size);
+struct list* list_create_copy(const struct list* list);
 void list_destroy(struct list* list);
 
 void list_append(struct list* list, void* data);
@@ -32,6 +33,8 @@ void list_clear(struct list* list);
 struct list* list_reverse(struct list* list);
 struct list* list_swap(struct list* list, const uint64_t index_a, const uint64_t index_b);
 
+struct list* list_get_sublist(const struct list* list, const uint64_t from_index, const uint64_t to_index);
+
 void* list_get(const struct list* list, const uint64_t index);
 bool list_contains(const struct list* list, const void* data);
 
@@ -41,6 +44,7 @@ struct list* list_bubble_sort(struct list* list);
 struct list* list_selection_sort(struct list* list);
 struct list* list_insertion_sort(struct list* list);
 struct list* list_heap_sort(struct list* list);
+struct list* list_merge_sort(struct list* list);
 
 void list_print_int(const struct list* list);
 void list_print_char(const struct list* list);
