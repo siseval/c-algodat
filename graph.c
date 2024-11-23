@@ -735,6 +735,10 @@ void graph_print_vertex_neighbors_char(const struct graph* graph, void* vertex)
     printf("(");
     for (uint64_t i = 0; i < vertex_neigbor_weights->count; i++)
     {
+        if (list_get(vertex_neigbor_weights, i) == NULL)
+        {
+            continue;
+        }
         char neighbor_char = (char)(uint64_t)((struct vertex_weight*)list_get(vertex_neigbor_weights, i))->vertex;
         printf(i == vertex_neigbor_weights->count - 1 ? "%c" : "%c, ", neighbor_char);
     }
@@ -747,8 +751,12 @@ void graph_print_vertex_neighbors_int(const struct graph* graph, void* vertex)
     printf("(");
     for (uint64_t i = 0; i < vertex_neigbor_weights->count; i++)
     {
-        uint64_t neighbor_char = (uint64_t)((struct vertex_weight*)list_get(vertex_neigbor_weights, i))->vertex;
-        printf(i == vertex_neigbor_weights->count - 1 ? "%lld" : "%lld, ", neighbor_char);
+        if (list_get(vertex_neigbor_weights, i) == NULL)
+        {
+            continue;
+        }
+        int64_t neighbor_int = (int64_t)((struct vertex_weight*)list_get(vertex_neigbor_weights, i))->vertex;
+        printf(i == vertex_neigbor_weights->count - 1 ? "%lld" : "%lld, ", neighbor_int);
     }
     printf(")");
 }

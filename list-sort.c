@@ -147,7 +147,6 @@ static struct list* merge_sort_recursive(struct list* list)
     struct list* sublist_b = list_get_sublist(list, middle_index, list->count);
     merge_sort_recursive(sublist_a);
     merge_sort_recursive(sublist_b);
-    free(list);
 
     return merge_sort_merge(sublist_a, sublist_b);
 }

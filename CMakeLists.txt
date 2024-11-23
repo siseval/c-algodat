@@ -10,6 +10,7 @@ add_executable(
         hashset.c
         stack.c
         heap.c
-        graph.c
         queue.c
+        graph.c
+        bst.c
     )
