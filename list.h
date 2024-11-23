@@ -37,15 +37,10 @@ struct list* list_get_sublist(const struct list* list, const uint64_t from_index
 
 void* list_get(const struct list* list, const uint64_t index);
 bool list_contains(const struct list* list, const void* data);
+int64_t list_get_max(const struct list* list);
+int64_t list_get_min(const struct list* list);
 
 bool list_is_sorted(struct list* list);
-
-struct list* list_bubble_sort(struct list* list);
-struct list* list_selection_sort(struct list* list);
-struct list* list_insertion_sort(struct list* list);
-struct list* list_heap_sort(struct list* list);
-struct list* list_merge_sort(struct list* list);
-struct list* list_quick_sort(struct list* list);
 
 void list_print_int(const struct list* list);
 void list_print_char(const struct list* list);

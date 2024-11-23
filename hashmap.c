@@ -168,7 +168,7 @@ void* hashmap_remove(struct hashmap* hashmap, const void* key)
 
 void hashmap_clear(struct hashmap* hashmap)
 {
-    for (int i = 0; i < hashmap->size; i++)
+    for (uint64_t i = 0; i < hashmap->size; i++)
     {
         hashmap->data[i] = NULL;
     }
