@@ -232,7 +232,7 @@ int64_t list_get_min(const struct list* list)
     if (list->count == 0)
     {
         fprintf(stderr, "list_get_min: list is empty\n");
-        return 0;
+        return NULL;
     }
     int64_t min = (int64_t)list->data[1];
     for (uint64_t i = 1; i <= list->count; i++)

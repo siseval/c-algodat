@@ -739,7 +739,7 @@ void graph_print_vertex_neighbors_char(const struct graph* graph, void* vertex)
         {
             continue;
         }
-        char neighbor_char = (char)(uint64_t)((struct vertex_weight*)list_get(vertex_neigbor_weights, i))->vertex;
+        char neighbor_char = (char)(int64_t)((struct vertex_weight*)list_get(vertex_neigbor_weights, i))->vertex;
         printf(i == vertex_neigbor_weights->count - 1 ? "%c" : "%c, ", neighbor_char);
     }
     printf(")");
