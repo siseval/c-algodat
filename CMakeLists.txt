@@ -13,4 +13,5 @@ add_executable(
         queue.c
         graph.c
         bst.c
+        avl.c
     )
