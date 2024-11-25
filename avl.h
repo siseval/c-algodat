@@ -11,15 +11,14 @@ struct avl
     struct hashmap* heights;
 };
 
-void rotate_left(struct avl* avl, void* vertex);
 struct avl* avl_create();
 void avl_destroy(struct avl* avl);
 
-void avl_insert(struct avl* avl, void* data);
-void avl_remove(struct avl* avl, void* data);
+void avl_insert(struct avl* avl, int64_t data);
+void avl_remove(struct avl* avl, int64_t data);
 
-void* avl_get(const struct avl* avl, void* data);
-bool avl_contains(const struct avl* avl, void* data);
+void* avl_get(const struct avl* avl, int64_t data);
+bool avl_contains(const struct avl* avl, int64_t data);
 struct list* avl_get_range(const struct avl* avl, const int64_t from, const int64_t to);
 
 void avl_print_int(const struct avl* avl);

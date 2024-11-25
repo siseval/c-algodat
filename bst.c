@@ -6,246 +6,80 @@ struct bst* bst_create()
     struct bst* bst = malloc(sizeof(struct bst));
     bst->count = 0;
     bst->root = NULL;
-    bst->graph = graph_create(false);
     return bst;
 }
+
+static struct node* node_create(const int64_t data)
+{
+    struct node* node = malloc(sizeof(struct node));
+    node->data = data;
+    node->left = NULL;
+    node->right = NULL;
+    return node;
+}
+
+static void node_destroy_recursive(struct node* node)
+{
+    if (node == NULL)
+    {
+        return;
+    }
+    node_destroy_recursive(node->left);
+    node_destroy_recursive(node->right);
+    free(node);
+}
+
 void bst_destroy(struct bst* bst)
 {
-    graph_destroy(bst->graph);
+    node_destroy_recursive(bst->root);
     free(bst);
 }
 
-static void add_vertex(struct bst* bst, void* data)
+static void insert_recursive(struct node** node, const int64_t data)
 {
-    graph_add_vertex(bst->graph, data);
-    struct list* vertex_weights = graph_get_vertex_edges(bst->graph, data);
-    for (uint8_t i = 0; i < 3; i++)
+    if (*node == NULL)
     {
-        list_append(vertex_weights, NULL);
-    }
-}
-
-void bst_insert(struct bst* bst, void* data)
-{
-    if (bst->root == NULL)
-    {
-        bst->root = data;
-        add_vertex(bst, data);
+        *node = node_create(data);
         return;
     }
-
-    void* cur_vertex = bst->root;
-    while (true)
+    if (data <= (*node)->data)
     {
-        if ((int64_t)data <= (int64_t)cur_vertex)
-        {
-            void* left_child = bst_get_left(bst, cur_vertex);
-            if (!bst_has_left(bst, cur_vertex))
-            {
-                bst_set_left(bst, cur_vertex, data);
-                break;
-            }
-            cur_vertex = left_child;
-        }
-        else
-        {
-            void* right_child = bst_get_right(bst, cur_vertex);
-            if (!bst_has_right(bst, cur_vertex))
-            {
-                bst_set_right(bst, cur_vertex, data);
-                break;
-            }
-            cur_vertex = right_child;
-        }
-    }
-    add_vertex(bst, data);
-    bst_set_parent(bst, data, cur_vertex);
-}
-
-static void* bst_get_min_child(const struct bst* bst, void* vertex)
-{
-    void* cur_vertex = vertex;
-    while (true)
-    {
-        if (!bst_has_left(bst, cur_vertex))
-        {
-            return cur_vertex;
-        }
-        cur_vertex = bst_get_left(bst, cur_vertex);
-    }
-}
-
-static bool is_left_child(const struct bst* bst, void* vertex)
-{
-    return bst_has_parent(bst, vertex) && bst_get_left(bst, bst_get_parent(bst, vertex)) == vertex;
-}
-
-static bool is_right_child(const struct bst* bst, void* vertex)
-{
-    return bst_has_parent(bst, vertex) && bst_get_right(bst, bst_get_parent(bst, vertex)) == vertex;
-}
-
-
-void bst_remove(struct bst* bst, void* data)
-{
-    if (!bst_contains(bst, data))
-    {
+        insert_recursive(&(*node)->left, data);
         return;
     }
-
-    if (bst_has_left(bst, data) && bst_has_right(bst, data))
+    if (data > (*node)->data)
     {
-        void* min_child = bst_get_min_child(bst, bst_get_right(bst, data));
-        bst_replace(bst, data, min_child);
-    }
-    else if (bst_has_left(bst, data))
-    {
-        void* left_child = bst_get_left(bst, data);
-        bst_replace(bst, data, left_child);
-    }
-    else if (bst_has_right(bst, data))
-    {
-        void* right_child = bst_get_right(bst, data);
-        bst_replace(bst, data, right_child);
-    }
-    else
-    {
-        void* parent = bst_get_parent(bst, data);
-        if (bst_get_left(bst, parent) == data)
-        {
-            bst_set_left(bst, parent, NULL);
-        }
-        else
-        {
-            bst_set_right(bst, parent, NULL);
-        }
-    }
-}
-
-void bst_replace(struct bst* bst, void* vertex, void* data)
-{
-    if (vertex == data)
-    {
+        insert_recursive(&(*node)->right, data);
         return;
     }
-    if (vertex == bst->root)
-    {
-        bst->root = data;
-    }
-    if (!bst_contains(bst, data))
-    {
-        add_vertex(bst, data);
-    }
+}
 
-    if (is_left_child(bst, data))
-    {
-        bst_set_left(bst, bst_get_parent(bst, data), NULL);
-    }
-    if (is_right_child(bst, data))
-    {
-        bst_set_right(bst, bst_get_parent(bst, data), NULL);
-    }
+void bst_insert(struct bst* bst, const int64_t data)
+{
+    insert_recursive(&bst->root, data);
+}
 
-    if (bst_get_parent(bst, vertex) != data)
-    {
-        bst_set_parent(bst, data, bst_get_parent(bst, vertex));
-    }
-    if (bst_get_left(bst, vertex) != data)
-    {
-        bst_set_left(bst, data, bst_get_left(bst, vertex));
-    }
-    if (bst_get_right(bst, vertex) != data)
-    {
-        bst_set_right(bst, data, bst_get_right(bst, vertex));
-    }
+void bst_remove(struct bst* bst, int64_t data)
+{
+}
 
-    void* parent = bst_get_parent(bst, vertex);
-
-    bst_set_left(bst, parent, data);
-    bst_set_right(bst, parent, data);
-    if (is_left_child(bst, vertex))
-    {
-        bst_set_parent(bst, bst_get_left(bst, vertex), data);
-    }
-    else if (is_right_child(bst, vertex))
-    {
-        bst_set_parent(bst, bst_get_right(bst, vertex), data);
-    }
-
-    hashset_remove(bst->graph->vertices, vertex);
-    list_remove(bst->graph->vertices_list, vertex);
+void bst_replace(struct bst* bst, int64_t vertex, int64_t data)
+{
 }
 
 
-void* bst_get(const struct bst* bst, void* data)
+int64_t bst_get(const struct bst* bst, int64_t data)
 {
-    void* cur_vertex = bst->root;
-    while (true)
-    {
-        if ((int64_t)data < (int64_t)cur_vertex)
-        {
-            if (!bst_has_left(bst, cur_vertex))
-            {
-                fprintf(stderr, "bst_get: data not found.");
-                return NULL;
-            }
-            cur_vertex = bst_get_left(bst, cur_vertex);
-        }
-        else if ((int64_t)data > (int64_t)cur_vertex)
-        {
-            if (!bst_has_right(bst, cur_vertex))
-            {
-                fprintf(stderr, "bst_get: data not found.");
-                return NULL;
-            }
-            cur_vertex = bst_get_right(bst, cur_vertex);
-        }
-        else
-        {
-            return data;
-        }
-    }
+    return 0;
 }
 
-bool bst_contains(const struct bst* bst, void* data)
+bool bst_contains(const struct bst* bst, int64_t data)
 {
-    void* cur_vertex = bst->root;
-    while (true)
-    {
-        if ((int64_t)data < (int64_t)cur_vertex)
-        {
-            if (!bst_has_left(bst, cur_vertex))
-            {
-                return false;
-            }
-            cur_vertex = bst_get_left(bst, cur_vertex);
-        }
-        else if ((int64_t)data > (int64_t)cur_vertex)
-        {
-            if (!bst_has_right(bst, cur_vertex))
-            {
-                return false;
-            }
-            cur_vertex = bst_get_right(bst, cur_vertex);
-        }
-        else
-        {
-            return true;
-        }
-    }
+    return false;
 }
 
-void get_range_recursive(const struct bst* bst, const int64_t from, const int64_t to, void* vertex, struct list* list)
+void get_range_recursive(const struct bst* bst, const int64_t from, const int64_t to, const struct node* node, struct list* list)
 {
-    if (bst_has_left(bst, vertex) && (int64_t)bst_get_left(bst, vertex) >= from)
-    {
-        get_range_recursive(bst, from, to, bst_get_left(bst, vertex), list);
-    }
-    list_append(list, vertex);
-    if (bst_has_right(bst, vertex) && (int64_t)bst_get_right(bst, vertex) <= to)
-    {
-        get_range_recursive(bst, from, to, bst_get_right(bst, vertex), list);
-    }
 }
 
 struct list* bst_get_range(const struct bst* bst, const int64_t from, const int64_t to)
@@ -256,113 +90,30 @@ struct list* bst_get_range(const struct bst* bst, const int64_t from, const int6
 }
 
 
-void* bst_get_min(const struct bst* bst)
+int64_t bst_get_min(const struct bst* bst)
 {
-    return bst_get_min_child(bst, bst->root);
+    return 0;
 }
 
-static void set_neighbor(struct bst* bst, void* vertex, void* data, const uint8_t index)
-{
-    struct list* vertex_weights = graph_get_vertex_edges(bst->graph, vertex);
-    if (data == NULL)
-    {
-        list_replace(vertex_weights, NULL, index);
-        return;
-    }
-    struct vertex_weight* vertex_weight = malloc(sizeof(struct vertex_weight));
-    vertex_weight->vertex = data;
-    vertex_weight->weight = 0;
-    list_replace(vertex_weights, vertex_weight, index);
-}
-
-void bst_set_parent(struct bst* bst, void* vertex, void* data)
-{
-    set_neighbor(bst, vertex, data, 0);
-}
-
-void bst_set_left(struct bst* bst, void* vertex, void* data)
-{
-    set_neighbor(bst, vertex, data, 1);
-}
-
-void bst_set_right(struct bst* bst, void* vertex, void* data)
-{
-    set_neighbor(bst, vertex, data, 2);
-}
-
-
-static void* get_neighbor(const struct bst* bst, void* vertex, const uint8_t index)
-{
-    struct list* vertex_weights = graph_get_vertex_edges(bst->graph, vertex);
-    struct vertex_weight* vertex_weight = list_get(vertex_weights, index);
-    if (vertex_weight == NULL)
-    {
-        return NULL;
-    }
-    return vertex_weight->vertex;
-}
-
-void* bst_get_parent(const struct bst* bst, void* vertex)
-{
-    return get_neighbor(bst, vertex, 0);
-}
-
-void* bst_get_left(const struct bst* bst, void* vertex)
-{
-    return get_neighbor(bst, vertex, 1);
-}
-
-void* bst_get_right(const struct bst* bst, void* vertex)
-{
-    return get_neighbor(bst, vertex, 2);
-}
-
-
-static bool has_neighbor(const struct bst* bst, void* vertex, const uint8_t index)
-{
-    struct list* vertex_weights = graph_get_vertex_edges(bst->graph, vertex);
-    struct vertex_weight* vertex_weight = list_get(vertex_weights, index);
-    if (vertex_weight == NULL)
-    {
-        return false;
-    }
-    return true;
-}
-
-bool bst_has_parent(const struct bst* bst, void* vertex)
-{
-    return has_neighbor(bst, vertex, 0);
-}
-
-bool bst_has_left(const struct bst* bst, void* vertex)
-{
-    return has_neighbor(bst, vertex, 1);
-}
-
-bool bst_has_right(const struct bst* bst, void* vertex)
-{
-    return has_neighbor(bst, vertex, 2);
-}
-
-static void print_int_recursive(const struct bst* bst, void* vertex, const char* prefix, const bool is_left)
+static void print_int_recursive(const struct bst* bst, struct node* node, const char* prefix, const bool is_left)
 {
     printf("\n%s", prefix);
     char next_prefix[128];
     strcpy(next_prefix, prefix);
 
-    if (vertex != bst->root)
+    if (node != bst->root)
     {
         printf("%s", is_left ? "├──" : "└──");
         strcat(next_prefix, is_left ? "│  " : "   ");
     }
-    if (vertex == NULL)
+    if (node == NULL)
     {
         printf("()");
         return;
     }
-    printf("%lld", (int64_t)vertex);
-    print_int_recursive(bst, bst_get_left(bst, vertex), next_prefix, true);
-    print_int_recursive(bst, bst_get_right(bst, vertex), next_prefix, false);
+    printf("%lld", node->data);
+    print_int_recursive(bst, node->left, next_prefix, true);
+    print_int_recursive(bst, node->right, next_prefix, false);
 }
 
 void bst_print_int(const struct bst* bst)
