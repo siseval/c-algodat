@@ -36,7 +36,7 @@ void bst_destroy(struct bst* bst)
     free(bst);
 }
 
-static struct node* rotate_left(struct node** node)
+static struct node* avl_rotate_left(struct node** node)
 {
     struct node* right = (*node)->right;
     struct node* right_left = right->left;
@@ -45,7 +45,7 @@ static struct node* rotate_left(struct node** node)
     return right;
 }
 
-static struct node* rotate_right(struct node** node)
+static struct node* avl_rotate_right(struct node** node)
 {
     struct node* left = (*node)->left;
     struct node* left_right = left->right;
@@ -54,7 +54,7 @@ static struct node* rotate_right(struct node** node)
     return left;
 }
 
-static int16_t get_height(const struct node* node)
+static int16_t avl_get_height(const struct node* node)
 {
     if (node == NULL)
     {
@@ -63,47 +63,47 @@ static int16_t get_height(const struct node* node)
     return node->height;
 }
 
-static void set_height(struct node* node)
+static void avl_set_height(struct node* node)
 {
     if (node == NULL)
     {
         return;
     }
-    set_height(node->left);
-    set_height(node->right);
+    avl_set_height(node->left);
+    avl_set_height(node->right);
 
-    int16_t left_height = get_height(node->left);
-    int16_t right_height = get_height(node->right);
+    int16_t left_height = avl_get_height(node->left);
+    int16_t right_height = avl_get_height(node->right);
 
     node->height = 1 + (left_height >= right_height ? left_height : right_height);
 }
 
-static int16_t balance_factor(const struct node* node)
+static int16_t avl_balance_factor(const struct node* node)
 {
     if (node == NULL)
     {
         return 0;
     }
-    return get_height(node->left) - get_height(node->right);
+    return avl_get_height(node->left) - avl_get_height(node->right);
 }
 
-static struct node* balance(struct node** node)
+static struct node* avl_balance(struct node** node)
 {
-    if (balance_factor(*node) < -1)
+    if (avl_balance_factor(*node) < -1)
     {
-        if (balance_factor((*node)->right) > 0)
+        if (avl_balance_factor((*node)->right) > 0)
         {
-            (*node)->right = rotate_right(&(*node)->right);
+            (*node)->right = avl_rotate_right(&(*node)->right);
         }
-        return rotate_left(node);
+        return avl_rotate_left(node);
     }
-    if (balance_factor(*node) > 1)
+    if (avl_balance_factor(*node) > 1)
     {
-        if (balance_factor((*node)->left) < 0)
+        if (avl_balance_factor((*node)->left) < 0)
         {
-            (*node)->left = rotate_left(&(*node)->left);
+            (*node)->left = avl_rotate_left(&(*node)->left);
         }
-        return rotate_right(node);
+        return avl_rotate_right(node);
     }
     return *node;
 }
@@ -124,8 +124,8 @@ static void insert_recursive(struct node** node, const int64_t data, const bool 
     }
     if (is_avl)
     {
-        set_height(*node);
-        *node = balance(node);
+        avl_set_height(*node);
+        *node = avl_balance(node);
     }
 }
 
@@ -176,8 +176,8 @@ struct node* remove_recursive(struct node** node, const int64_t data, const bool
     
     if (is_avl)
     {
-        set_height(*node);
-        return balance(node);
+        avl_set_height(*node);
+        return avl_balance(node);
     }
     return *node;
 }
@@ -272,6 +272,39 @@ struct list* bst_get_range(const struct bst* bst, const int64_t from, const int6
 int64_t bst_get_min(const struct bst* bst)
 {
     return get_min_child(bst->root)->data;
+}
+
+int16_t node_height_recursive(const struct node* node)
+{
+    if (node == NULL)
+    {
+        return 0;
+    }
+    int16_t left_height = node_height_recursive(node->left);
+    int16_t right_height = node_height_recursive(node->right);
+    return 1 + (left_height >= right_height ? left_height : right_height);
+}
+
+int64_t get_diameter_recursive(const struct node* node, const int64_t cur_max)
+{
+    if (node == NULL)
+    {
+        return 0;
+    }
+    int16_t left_height = node_height_recursive(node->left);
+    int16_t right_height = node_height_recursive(node->right);
+
+    int64_t node_diameter =  left_height + right_height;
+    if (node_diameter <= cur_max)
+    {
+        return cur_max;
+    }
+    return left_height >= right_height ? get_diameter_recursive(node->left, node_diameter) : get_diameter_recursive(node->right, node_diameter);
+}
+
+int64_t bst_get_diameter(const struct bst* bst)
+{
+    return get_diameter_recursive(bst->root, 0);
 }
 
 

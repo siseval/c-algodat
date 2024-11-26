@@ -34,6 +34,7 @@ bool bst_contains(const struct bst* bst, int64_t data);
 int64_t bst_get_min(const struct bst* bst);
 
 struct list* bst_get_range(const struct bst* bst, const int64_t from, const int64_t to);
+int64_t bst_get_diameter(const struct bst* bst);
 
 void bst_print_int(const struct bst* bst);
 
