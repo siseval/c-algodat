@@ -209,7 +209,7 @@ bool list_contains(const struct list* list, const void* data)
     return false;
 }
 
-int64_t list_get_max(const struct list* list)
+int64_t list_get_max_int(const struct list* list)
 {
     if (list->count == 0)
     {
@@ -227,7 +227,7 @@ int64_t list_get_max(const struct list* list)
     return max;
 }
 
-int64_t list_get_min(const struct list* list)
+int64_t list_get_min_int(const struct list* list)
 {
     if (list->count == 0)
     {
@@ -245,7 +245,7 @@ int64_t list_get_min(const struct list* list)
     return min;
 }
 
-bool list_is_sorted(struct list* list)
+bool list_is_sorted_int(struct list* list)
 {
     for (uint64_t i = 0; i < list->count - 1; i++)
     {

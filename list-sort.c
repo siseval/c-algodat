@@ -243,7 +243,7 @@ struct list* bucket_sort_by_digit(struct list* list, const uint64_t exponent)
 struct list* list_sort_radix(struct list* list)
 {
     uint16_t max_digit_count = 1;
-    int64_t list_max = (int64_t)list_get_max(list);
+    int64_t list_max = (int64_t)list_get_max_int(list);
 
     for (uint64_t i = 1; list_max / i > 0; i *= 10)
     {

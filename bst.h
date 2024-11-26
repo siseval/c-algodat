@@ -1,15 +1,16 @@
-#ifndef bst_H
-#define bst_H
+#ifndef BST_H
+#define BST_H
 
 #include <stdlib.h>
 #include <stdint.h>
 #include "list.h"
 
-#define bst(T) bst_create();
+#define bst(T) bst_create(false);
+#define avl(T) bst_create(true);
 
 struct bst
 {
-    uint64_t count;
+    bool is_avl;
     struct node* root;
 };
 
@@ -18,9 +19,11 @@ struct node
     struct node* left;
     struct node* right;
     int64_t data;
+    int16_t height;
 };
 
-struct bst* bst_create();
+
+struct bst* bst_create(const bool is_avl);
 void bst_destroy(struct bst* bst);
 
 void bst_insert(struct bst* bst, int64_t data);
