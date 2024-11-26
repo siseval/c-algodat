@@ -46,10 +46,10 @@ static bool hashmap_realloc(struct hashmap* hashmap, uint64_t size)
 
 static void hashmap_rehash(struct hashmap* hashmap)
 {
-    struct key_value** data_buf = calloc(hashmap->size, hashmap->data_size); 
-    memcpy(data_buf, hashmap->data, hashmap->size * hashmap->data_size);
+    struct key_value** data_buf = calloc(1 + hashmap->size, hashmap->data_size); 
+    memcpy(data_buf, hashmap->data, sizeof(void*) + hashmap->size * hashmap->data_size);
     hashmap_clear(hashmap);
-    for (int i = 1; i < hashmap->size; i++)
+    for (uint64_t i = 1; i <= hashmap->size; i++)
     {
         if (data_buf[i] != NULL)
         {
