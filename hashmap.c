@@ -46,10 +46,10 @@ static bool hashmap_realloc(struct hashmap* hashmap, uint64_t size)
 
 static void hashmap_rehash(struct hashmap* hashmap)
 {
-    struct key_value** data_buf = calloc(1 + hashmap->size, hashmap->data_size); 
-    memcpy(data_buf, hashmap->data, sizeof(void*) + hashmap->size * hashmap->data_size);
+    struct key_value** data_buf = calloc(1 + hashmap->size / 2, hashmap->data_size); 
+    memcpy(data_buf, hashmap->data, (1 + hashmap->size / 2) * hashmap->data_size);
     hashmap_clear(hashmap);
-    for (uint64_t i = 1; i <= hashmap->size; i++)
+    for (int i = 1; i <= hashmap->size / 2; i++)
     {
         if (data_buf[i] != NULL)
         {
@@ -66,6 +66,7 @@ static void hashmap_fill_hole(struct hashmap* hashmap, const uint64_t index)
     {
         struct key_value* data = hashmap->data[1 + (index + index_delta) % hashmap->size];
         uint64_t new_index = hash_data(data->key, hashmap->size, hashmap->string_hash);
+
         if (!(0 < (new_index - index) % hashmap->size && (new_index - index) % hashmap->size <= index_delta))
         {
             hashmap->data[1 + index] = data;
@@ -108,8 +109,6 @@ void hashmap_destroy(struct hashmap* hashmap)
     free(hashmap);
     for (int i = 1; i <= hashmap->count; i++)
     {
-        free(hashmap->data[i]->key);
-        free(hashmap->data[i]->value);
         free(hashmap->data[i]);
     }
 }
@@ -170,7 +169,7 @@ void hashmap_clear(struct hashmap* hashmap)
 {
     for (uint64_t i = 0; i < hashmap->size; i++)
     {
-        hashmap->data[i] = NULL;
+        hashmap->data[1 + i] = NULL;
     }
     hashmap->count = 0;
 }

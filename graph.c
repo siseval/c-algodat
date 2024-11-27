@@ -279,10 +279,10 @@ struct list* graph_lightest_path(const struct graph* graph, void* start_vertex, 
     }
     hashmap_put(distances, start_vertex, (uint64_t*)0);
 
-    void** distance_start_vertex = malloc(sizeof(void*) * 2);
-    distance_start_vertex[0] = (uint64_t*)0;
-    distance_start_vertex[1] = start_vertex;
-    heap_push(to_visit, distance_start_vertex);
+    void** distance_start = malloc(sizeof(void*) * 2);
+    distance_start[0] = (uint64_t*)0;
+    distance_start[1] = start_vertex;
+    heap_push(to_visit, distance_start);
     bool goal_vertex_found = false;
 
     while (to_visit->count > 0)
@@ -313,7 +313,7 @@ struct list* graph_lightest_path(const struct graph* graph, void* start_vertex, 
             hashmap_put(parents, neighbor, cur_vertex);
             hashmap_put(distances, neighbor, (uint64_t*)distance);
             void** distance_neighbor = malloc(sizeof(void*) * 2);
-            distance_neighbor[0] = (uint64_t*)distance;
+            distance_neighbor[0] = (void*)distance;
             distance_neighbor[1] = neighbor;
             heap_push(to_visit, distance_neighbor);
         }

@@ -37,12 +37,12 @@ static bool hashset_realloc(struct hashset* hashset, uint64_t size)
     return true;
 }
 
-static void hashset_rehash(struct hashset* hashset)
+static void hashset_rehash(struct hashset* hashset, const uint64_t size)
 {
-    void** data_buf = calloc(hashset->size, hashset->data_size); 
-    memcpy(data_buf, hashset->data, hashset->size * hashset->data_size);
+    void** data_buf = malloc(hashset->data_size * (size + 1)); 
+    memcpy(data_buf, hashset->data, hashset->data_size * (size + 1));
     hashset_clear(hashset);
-    for (int i = 0; i < hashset->size; i++)
+    for (int i = 0; i < size; i++)
     {
         if (data_buf[i] != NULL)
         {
@@ -110,7 +110,7 @@ void hashset_put(struct hashset* hashset, void* data)
             return;
         }
         hashset->size *= 2;
-        hashset_rehash(hashset);
+        hashset_rehash(hashset, hashset->size / 2);
     }
 
     uint64_t index = hash_data(data, hashset->size, hashset->string_hash);
