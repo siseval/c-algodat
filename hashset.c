@@ -25,31 +25,35 @@ static uint64_t hash_data(const void* data, const uint64_t mod, bool string_hash
 
 static bool hashset_realloc(struct hashset* hashset, uint64_t size)
 {
-    void** tmp = realloc(hashset->data, size);
-    if (!tmp)
+    void** tmp_data = realloc(hashset->data, size);
+    bool* tmp_has_data = realloc(hashset->has_data, hashset->size * 2);
+    if (!tmp_data || !tmp_has_data)
     {
         fprintf(stderr, "hashset_realloc: realloc failed\n");
-        free(hashset->data);
-        free(hashset);
+        hashset_destroy(hashset);
         return false;
     }
-    hashset->data = tmp;
+    hashset->data = tmp_data;
+    hashset->has_data = tmp_has_data;
     return true;
 }
 
 static void hashset_rehash(struct hashset* hashset, const uint64_t size)
 {
     void** data_buf = malloc(hashset->data_size * (size + 1)); 
+    bool* has_data_buf = malloc(size * 2);
     memcpy(data_buf, hashset->data, hashset->data_size * (size + 1));
+    memcpy(has_data_buf, hashset->has_data, hashset->size);
     hashset_clear(hashset);
-    for (int i = 0; i < size; i++)
+    for (uint64_t i = 0; i < size; i++)
     {
-        if (data_buf[i] != NULL)
+        if (has_data_buf[i])
         {
             hashset_put(hashset, data_buf[i]);
         }
     }
     free(data_buf);
+    free(has_data_buf);
 }
 
 static void hashset_fill_hole(struct hashset* hashset, uint64_t index)
@@ -84,6 +88,7 @@ struct hashset* hashset_create(const uint64_t size, const bool string_hash)
     hashset->string_hash = string_hash;
     hashset->count = 0;
 
+    hashset->has_data = calloc(size, sizeof(bool));
     hashset->data = calloc((1 + size), hashset->data_size);
     if (!hashset->data) 
     {
@@ -98,6 +103,7 @@ struct hashset* hashset_create(const uint64_t size, const bool string_hash)
 void hashset_destroy(struct hashset* hashset)
 {
     free(hashset->data);
+    free(hashset->has_data);
     free(hashset);
 }
 
@@ -115,7 +121,7 @@ void hashset_put(struct hashset* hashset, void* data)
 
     uint64_t index = hash_data(data, hashset->size, hashset->string_hash);
 
-    while (hashset->data[1 + index] != NULL)
+    while (hashset->has_data[index])
     {
         if (hashset->data[1 + index] == data)
         {
@@ -124,6 +130,7 @@ void hashset_put(struct hashset* hashset, void* data)
         index = (index + 1) % hashset->size;
     }
     hashset->data[1 + index] = data;
+    hashset->has_data[index] = true;
     hashset->count++;
 }
 
@@ -132,7 +139,7 @@ void* hashset_remove(struct hashset* hashset, const void* data)
     uint64_t index = hash_data(data, hashset->size, hashset->string_hash);
     while (hashset->data[1 + index] != data)
     {
-        if (hashset->data[1 + index] == NULL)
+        if (hashset->has_data[1 + index])
         {
             fprintf(stderr, "hashset_remove: value not in hashset.\n");
             return NULL;
@@ -141,6 +148,7 @@ void* hashset_remove(struct hashset* hashset, const void* data)
     }
     void* data_buf = hashset->data[1 + index];
     hashset->data[1 + index] = NULL;
+    hashset->has_data[index] = false;
     hashset->count--;
     hashset_fill_hole(hashset, index);
     return data_buf;
@@ -150,7 +158,8 @@ void hashset_clear(struct hashset* hashset)
 {
     for (uint64_t i = 0; i < hashset->size; i++)
     {
-        hashset->data[i] = NULL;
+        hashset->data[1 + i] = NULL;
+        hashset->has_data[i] = false;
     }
     hashset->count = 0;
 }
@@ -160,7 +169,7 @@ void* hashset_get(const struct hashset* hashset, const void* data)
     uint64_t index = hash_data(data, hashset->size, hashset->string_hash);
     while (hashset->data[1 + index] != data)
     {
-        if (hashset->data[1 + index] == NULL)
+        if (hashset->has_data[1 + index])
         {
             fprintf(stderr, "hashset_get: value not in hashset.\n");
             return NULL;
@@ -178,7 +187,7 @@ void* hashset_get_random(const struct hashset* hashset)
         fprintf(stderr, "hashset_get_random: hashset is empty.\n");
     }
     uint64_t index = rand() % hashset->size;
-    while (hashset->data[1 + index] == NULL)
+    while (hashset->has_data[1 + index])
     {
         index = (index + 1) % hashset->size;
     }
@@ -190,7 +199,7 @@ bool hashset_contains(const struct hashset* hashset, const void* data)
     uint64_t index = hash_data(data, hashset->size, hashset->string_hash);
     while (hashset->data[1 + index] != data)
     {
-        if (hashset->data[1 + index] == NULL)
+        if (hashset->has_data[1 + index])
         {
             return false;
         }

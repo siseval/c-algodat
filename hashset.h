@@ -16,6 +16,7 @@ struct hashset
     uint64_t data_size;
     bool string_hash;
     uint64_t count;
+    bool* has_data;
     void **data;
 };
 
