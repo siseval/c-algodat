@@ -31,46 +31,62 @@ static bool key_equals(const void* key1, const void* key2, bool string_hash)
     return key1 == key2;
 }
 
-static bool hashmap_realloc(struct hashmap* hashmap, uint64_t size)
+static bool hashmap_realloc(struct hashmap* hashmap, const uint64_t size)
 {
-    struct key_value** tmp = realloc(hashmap->data, size);
-    if (!tmp)
+    void** tmp_keys = realloc(hashmap->keys, size);
+    void** tmp_values = realloc(hashmap->values, size);
+    bool* tmp_has_data = realloc(hashmap->has_data, hashmap->size * 2);
+    if (!tmp_keys || !tmp_values || !tmp_has_data)
     {
         fprintf(stderr, "hashmap_realloc: realloc failed\n");
         hashmap_destroy(hashmap);
         return false;
     }
-    hashmap->data = tmp;
+    hashmap->keys = tmp_keys;
+    hashmap->values = tmp_values;
+    hashmap->has_data = tmp_has_data;
     return true;
 }
 
-static void hashmap_rehash(struct hashmap* hashmap)
+static void hashmap_rehash(struct hashmap* hashmap, const uint64_t size)
 {
-    struct key_value** data_buf = calloc(1 + hashmap->size / 2, hashmap->data_size); 
-    memcpy(data_buf, hashmap->data, (1 + hashmap->size / 2) * hashmap->data_size);
+    void** keys_buf = malloc(hashmap->data_size * (size + 1)); 
+    void** values_buf = malloc(hashmap->data_size * (size + 1)); 
+    bool* has_data_buf = malloc(size * 2);
+    memcpy(keys_buf, hashmap->keys, hashmap->data_size * (size + 1));
+    memcpy(values_buf, hashmap->values, hashmap->data_size * (size + 1));
+    memcpy(has_data_buf, hashmap->has_data, hashmap->size);
     hashmap_clear(hashmap);
-    for (int i = 1; i <= hashmap->size / 2; i++)
+
+    for (uint64_t i = 0; i < size; i++)
     {
-        if (data_buf[i] != NULL)
+        if (has_data_buf[i])
         {
-            hashmap_put(hashmap, data_buf[i]->key, data_buf[i]->value);
+            hashmap_put(hashmap, keys_buf[1 + i], values_buf[1 + i]);
         }
     }
-    free(data_buf);
+    free(keys_buf);
+    free(values_buf);
+    free(has_data_buf);
 }
 
 static void hashmap_fill_hole(struct hashmap* hashmap, const uint64_t index)
 {
     uint64_t index_delta = 1; 
-    while (hashmap->data[1 + (index + index_delta) % hashmap->size] != NULL)
+    while (hashmap->has_data[(index + index_delta) % hashmap->size])
     {
-        struct key_value* data = hashmap->data[1 + (index + index_delta) % hashmap->size];
-        uint64_t new_index = hash_data(data->key, hashmap->size, hashmap->string_hash);
+        void* key = hashmap->keys[1 + (index + index_delta) % hashmap->size];
+        void* value = hashmap->values[1 + (index + index_delta) % hashmap->size];
 
+        uint64_t new_index = hash_data(key, hashmap->size, hashmap->string_hash);
         if (!(0 < (new_index - index) % hashmap->size && (new_index - index) % hashmap->size <= index_delta))
         {
-            hashmap->data[1 + index] = data;
-            hashmap->data[1 + (index + index_delta) % hashmap->size] = NULL;
+            hashmap->keys[1 + index] = key;
+            hashmap->values[1 + index] = value;
+            hashmap->has_data[index] = true;
+            hashmap->keys[1 + (index + index_delta) % hashmap->size] = NULL;
+            hashmap->values[1 + (index + index_delta) % hashmap->size] = NULL;
+            hashmap->has_data[(index + index_delta) % hashmap->size] = false;
             hashmap_fill_hole(hashmap, (index + index_delta) % hashmap->size);
             return;
         }
@@ -88,12 +104,14 @@ struct hashmap* hashmap_create(const uint64_t size, const bool string_hash)
     }
 
     hashmap->size = size;
-    hashmap->data_size = sizeof(struct key_value*);
+    hashmap->data_size = sizeof(void*);
     hashmap->string_hash = string_hash;
     hashmap->count = 0;
 
-    hashmap->data = calloc((1 + size), hashmap->data_size);
-    if (!hashmap->data) 
+    hashmap->has_data = calloc(size, sizeof(bool));
+    hashmap->keys = calloc((1 + size), hashmap->data_size);
+    hashmap->values = calloc((1 + size), hashmap->data_size);
+    if (!hashmap->has_data || !hashmap->keys || !hashmap->values)
     {
         fprintf(stderr, "hashmap_create: data malloc failed\n");
         free(hashmap);
@@ -105,12 +123,10 @@ struct hashmap* hashmap_create(const uint64_t size, const bool string_hash)
 
 void hashmap_destroy(struct hashmap* hashmap)
 {
-    free(hashmap->data);
+    free(hashmap->has_data);
+    free(hashmap->keys);
+    free(hashmap->values);
     free(hashmap);
-    for (int i = 1; i <= hashmap->count; i++)
-    {
-        free(hashmap->data[i]);
-    }
 }
 
 void hashmap_put(struct hashmap* hashmap, void* key, void* value)
@@ -122,39 +138,38 @@ void hashmap_put(struct hashmap* hashmap, void* key, void* value)
             return;
         }
         hashmap->size *= 2;
-        hashmap_rehash(hashmap);
+        hashmap_rehash(hashmap, hashmap->size / 2);
     }
 
     uint64_t index = hash_data(key, hashmap->size, hashmap->string_hash);
 
-    while (hashmap->data[1 + index] != NULL)
+    while (hashmap->has_data[index])
     {
-        if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
+        if (key_equals(hashmap->keys[1 + index], key, hashmap->string_hash))
         {
-            hashmap->data[1 + index]->value = value;
+            hashmap->values[1 + index] = value;
             return;
         }
         index = (index + 1) % hashmap->size;
     }
 
-    struct key_value* key_value = calloc(1, sizeof(struct key_value));
-    key_value->key = key;
-    key_value->value = value;
-
-    hashmap->data[1 + index] = key_value;
+    hashmap->keys[1 + index] = key;
+    hashmap->values[1 + index] = value;
+    hashmap->has_data[index] = true;
     hashmap->count++;
 }
 
 void* hashmap_remove(struct hashmap* hashmap, const void* key)
 {
     uint64_t index = hash_data(key, hashmap->size, hashmap->string_hash);    
-    while (hashmap->data[1 + index] != NULL)
+    while (hashmap->has_data[index])
     {
-        if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
+        if (key_equals(hashmap->keys[1 + index], key, hashmap->string_hash))
         {
-            void* value = hashmap->data[1 + index]->value;
-            free(hashmap->data[1 + index]);
-            hashmap->data[1 + index] = NULL;
+            void* value = hashmap->values[1 + index];
+            hashmap->keys[1 + index] = NULL;
+            hashmap->values[1 + index] = NULL;
+            hashmap->has_data[index] = false;
             hashmap->count--;
             hashmap_fill_hole(hashmap, index);
             return value;
@@ -169,7 +184,9 @@ void hashmap_clear(struct hashmap* hashmap)
 {
     for (uint64_t i = 0; i < hashmap->size; i++)
     {
-        hashmap->data[1 + i] = NULL;
+        hashmap->keys[1 + i] = NULL;
+        hashmap->values[1 + i] = NULL;
+        hashmap->has_data[i] = false;
     }
     hashmap->count = 0;
 }
@@ -177,11 +194,11 @@ void hashmap_clear(struct hashmap* hashmap)
 void* hashmap_get(const struct hashmap* hashmap, const void* key)
 {
     uint64_t index = hash_data(key, hashmap->size, hashmap->string_hash);
-    while (hashmap->data[1 + index] != NULL)
+    while (hashmap->has_data[index])
     {
-        if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
+        if (key_equals(hashmap->keys[1 + index], key, hashmap->string_hash))
         {
-            return hashmap->data[1 + index]->value;
+            return hashmap->values[1 + index];
         }
         index = (index + 1) % hashmap->size;
     }
@@ -192,9 +209,9 @@ void* hashmap_get(const struct hashmap* hashmap, const void* key)
 bool hashmap_has_key(const struct hashmap* hashmap, const void* key)
 {
     uint64_t index = hash_data(key, hashmap->size, hashmap->string_hash);
-    while (hashmap->data[1 + index] != NULL)
+    while (hashmap->has_data[index])
     {
-        if (key_equals(hashmap->data[1 + index]->key, key, hashmap->string_hash))
+        if (key_equals(hashmap->keys[1 + index], key, hashmap->string_hash))
         {
             return true;
         }

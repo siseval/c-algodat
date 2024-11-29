@@ -9,19 +9,15 @@
 
 #define hashmap(K, V) hashmap_create(32, !strcmp(#K, "str") || !strcmp(#K, "char*"))
 
-struct key_value
-{
-    void* key;
-    void* value;
-};
-
 struct hashmap
 {
     uint64_t size;
     uint64_t data_size;
     bool string_hash;
     uint64_t count;
-    struct key_value** data;
+    bool* has_data;
+    void** keys;
+    void** values;
 };
 
 struct hashmap* hashmap_create(const uint64_t size, const bool string_type); 

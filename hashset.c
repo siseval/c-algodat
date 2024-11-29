@@ -23,7 +23,7 @@ static uint64_t hash_data(const void* data, const uint64_t mod, bool string_hash
 }
 
 
-static bool hashset_realloc(struct hashset* hashset, uint64_t size)
+static bool hashset_realloc(struct hashset* hashset, const uint64_t size)
 {
     void** tmp_data = realloc(hashset->data, size);
     bool* tmp_has_data = realloc(hashset->has_data, hashset->size * 2);
@@ -45,11 +45,12 @@ static void hashset_rehash(struct hashset* hashset, const uint64_t size)
     memcpy(data_buf, hashset->data, hashset->data_size * (size + 1));
     memcpy(has_data_buf, hashset->has_data, hashset->size);
     hashset_clear(hashset);
+
     for (uint64_t i = 0; i < size; i++)
     {
         if (has_data_buf[i])
         {
-            hashset_put(hashset, data_buf[i]);
+            hashset_put(hashset, data_buf[1 + i]);
         }
     }
     free(data_buf);
@@ -59,14 +60,17 @@ static void hashset_rehash(struct hashset* hashset, const uint64_t size)
 static void hashset_fill_hole(struct hashset* hashset, uint64_t index)
 {
     uint64_t index_delta = 1;
-    while (hashset->data[1 + (index + index_delta) % hashset->size] != NULL)
+    while (hashset->has_data[(index + index_delta) % hashset->size])
     {
         void* data = hashset->data[1 + (index + index_delta) % hashset->size];
+
         uint64_t new_index = hash_data(data, hashset->size, hashset->string_hash);
         if (!(0 < (new_index - index) % hashset->size && (new_index - index) % hashset->size <= index_delta))
         {
             hashset->data[1 + index] = data;
+            hashset->has_data[index] = true;
             hashset->data[1 + (index + index_delta) % hashset->size] = NULL;
+            hashset->has_data[(index + index_delta) % hashset->size] = false;
             hashset_fill_hole(hashset, (index + index_delta) % hashset->size);
             return;
         }
@@ -90,7 +94,7 @@ struct hashset* hashset_create(const uint64_t size, const bool string_hash)
 
     hashset->has_data = calloc(size, sizeof(bool));
     hashset->data = calloc((1 + size), hashset->data_size);
-    if (!hashset->data) 
+    if (!hashset->data || !hashset->has_data)
     {
         fprintf(stderr, "hashset_create: data malloc failed\n");
         free(hashset);
@@ -102,8 +106,8 @@ struct hashset* hashset_create(const uint64_t size, const bool string_hash)
 
 void hashset_destroy(struct hashset* hashset)
 {
-    free(hashset->data);
     free(hashset->has_data);
+    free(hashset->data);
     free(hashset);
 }
 
