@@ -3,8 +3,7 @@
 
 static uint64_t hash_integer(const void* data, const uint64_t mod)
 {
-    uint64_t hash = (3197 * (uint64_t)data);
-    return hash % mod;
+    return (3197 * (uint64_t)data) % mod;
 }
 
 static uint64_t hash_string(const char* data, const uint64_t mod)

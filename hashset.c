@@ -3,8 +3,7 @@
 
 static uint64_t hash_integer(const void* data, const uint64_t mod)
 {
-    uint64_t hash = (3197 * (uint64_t)data);
-    return hash % mod;
+    return (3197 * (uint64_t)data) % mod;
 }
 
 static uint64_t hash_string(const char* data, const uint64_t mod)
@@ -20,6 +19,15 @@ static uint64_t hash_string(const char* data, const uint64_t mod)
 static uint64_t hash_data(const void* data, const uint64_t mod, bool string_hash)
 {
     return string_hash ? hash_string(data, mod) : hash_integer(data, mod); 
+}
+
+static bool data_equals(const void* data1, const void* data2, bool string_hash)
+{
+    if (string_hash)
+    {
+        return !strcmp((char*)data1, (char*)data2);
+    }
+    return data1 == data2;
 }
 
 
@@ -127,7 +135,7 @@ void hashset_put(struct hashset* hashset, void* data)
 
     while (hashset->has_data[index])
     {
-        if (hashset->data[1 + index] == data)
+        if (data_equals(hashset->data[1 + index], data, hashset->string_hash))
         {
             return;
         }
@@ -141,9 +149,9 @@ void hashset_put(struct hashset* hashset, void* data)
 void* hashset_remove(struct hashset* hashset, const void* data)
 {  
     uint64_t index = hash_data(data, hashset->size, hashset->string_hash);
-    while (hashset->data[1 + index] != data)
+    while (!data_equals(hashset->data[1 + index], data, hashset->string_hash))
     {
-        if (hashset->has_data[1 + index])
+        if (!hashset->has_data[index])
         {
             fprintf(stderr, "hashset_remove: value not in hashset.\n");
             return NULL;
@@ -171,9 +179,9 @@ void hashset_clear(struct hashset* hashset)
 void* hashset_get(const struct hashset* hashset, const void* data)
 {
     uint64_t index = hash_data(data, hashset->size, hashset->string_hash);
-    while (hashset->data[1 + index] != data)
+    while (!data_equals(hashset->data[1 + index], data, hashset->string_hash))
     {
-        if (hashset->has_data[1 + index])
+        if (!hashset->has_data[index])
         {
             fprintf(stderr, "hashset_get: value not in hashset.\n");
             return NULL;
@@ -191,7 +199,7 @@ void* hashset_get_random(const struct hashset* hashset)
         fprintf(stderr, "hashset_get_random: hashset is empty.\n");
     }
     uint64_t index = rand() % hashset->size;
-    while (hashset->has_data[1 + index])
+    while (!hashset->has_data[index])
     {
         index = (index + 1) % hashset->size;
     }
@@ -201,9 +209,9 @@ void* hashset_get_random(const struct hashset* hashset)
 bool hashset_contains(const struct hashset* hashset, const void* data)
 {
     uint64_t index = hash_data(data, hashset->size, hashset->string_hash);
-    while (hashset->data[1 + index] != data)
+    while (!data_equals(hashset->data[1 + index], data, hashset->string_hash))
     {
-        if (hashset->has_data[1 + index])
+        if (!hashset->has_data[index])
         {
             return false;
         }
